@@ -1,0 +1,475 @@
+{
+  "0": {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "dao",
+        "type": "address"
+      }
+    ],
+    "name": "Created",
+    "type": "event"
+  },
+  "1": {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  "2": {
+    "inputs": [],
+    "name": "defaultIMPLs",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "DAO",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "Member",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "VotePool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "Ledger",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "Asset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "AssetShell",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "3": {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "4": {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  "5": {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  "6": {
+    "inputs": [],
+    "name": "initDAOs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  "7": {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "DAO",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "Member",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "VotePool",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "Ledger",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "Asset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "AssetShell",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct DAOs.DAOIMPLs",
+        "name": "IMPLs",
+        "type": "tuple"
+      }
+    ],
+    "name": "setDefaultIMPLs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  "8": {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "mission",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "id",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "string",
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "internalType": "string",
+                    "name": "description",
+                    "type": "string"
+                  },
+                  {
+                    "internalType": "string",
+                    "name": "avatar",
+                    "type": "string"
+                  },
+                  {
+                    "internalType": "uint32",
+                    "name": "votes",
+                    "type": "uint32"
+                  },
+                  {
+                    "internalType": "uint256[2]",
+                    "name": "__",
+                    "type": "uint256[2]"
+                  }
+                ],
+                "internalType": "struct IMember.Info",
+                "name": "info",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "tokenURI",
+                "type": "string"
+              },
+              {
+                "internalType": "uint256[]",
+                "name": "permissions",
+                "type": "uint256[]"
+              }
+            ],
+            "internalType": "struct Member.MintMemberArgs[]",
+            "name": "members",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct DAOs.InitMemberArgs",
+        "name": "memberArgs",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lifespan",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DAOs.InitVotePoolArgs",
+        "name": "votePoolArgs",
+        "type": "tuple"
+      }
+    ],
+    "name": "deploy",
+    "outputs": [
+      {
+        "internalType": "contract IDAO",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  "9": {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "mission",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "id",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "string",
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "internalType": "string",
+                    "name": "description",
+                    "type": "string"
+                  },
+                  {
+                    "internalType": "string",
+                    "name": "avatar",
+                    "type": "string"
+                  },
+                  {
+                    "internalType": "uint32",
+                    "name": "votes",
+                    "type": "uint32"
+                  },
+                  {
+                    "internalType": "uint256[2]",
+                    "name": "__",
+                    "type": "uint256[2]"
+                  }
+                ],
+                "internalType": "struct IMember.Info",
+                "name": "info",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "tokenURI",
+                "type": "string"
+              },
+              {
+                "internalType": "uint256[]",
+                "name": "permissions",
+                "type": "uint256[]"
+              }
+            ],
+            "internalType": "struct Member.MintMemberArgs[]",
+            "name": "members",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct DAOs.InitMemberArgs",
+        "name": "memberArgs",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lifespan",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DAOs.InitVotePoolArgs",
+        "name": "votePoolArgs",
+        "type": "tuple"
+      }
+    ],
+    "name": "deployAssetSalesDAO",
+    "outputs": [
+      {
+        "internalType": "contract IDAO",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  "10": {
+    "inputs": [],
+    "name": "length",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "11": {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "addr",
+        "type": "address"
+      }
+    ],
+    "name": "contains",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "12": {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "at",
+    "outputs": [
+      {
+        "internalType": "contract IDAO",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "13": {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "impl",
+        "type": "address"
+      }
+    ],
+    "name": "upgrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+}

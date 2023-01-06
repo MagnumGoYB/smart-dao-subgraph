@@ -1,0 +1,16 @@
+# ignore log output
+*.log
+
+# ignore all dotfiles except the whitelisted ones
+!.env.example
+!.github
+!.gitignore
+!.prettierignore
+
+# ignore build output and dependencies
+build/
+generated/
+node_modules/
+
+# subgraph manifests are generated from a template
+subgraph.yaml
