@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "format": "pretty-quick && prettier-package-json --write",
+    "format": "pretty-quick --staged --no-restage && prettier-package-json --write",
     "husky": "husky install || exit 0",
     "preinstall": "only-allow pnpm",
     "postinstall": "pnpm husky && pnpm format",
