@@ -32,3 +32,29 @@ dataSources:
         {{/each}}
       {{/if}}
   {{/each}}
+{{#if templates}}
+templates:
+  {{#each templates}}
+  - kind: ethereum/contract
+    name: {{name}}
+    network: {{@root.network}}
+    source:
+      abi: {{abi.name}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities: []
+      file: {{file}}
+      abis:
+        - name: {{abi.name}}
+          file: {{abi.file}}
+      {{#if events}}
+      eventHandlers:
+        {{#each events}}
+        - event: {{event}}
+          handler: {{handler}}
+        {{/each}}
+      {{/if}}
+  {{/each}}
+{{/if}}

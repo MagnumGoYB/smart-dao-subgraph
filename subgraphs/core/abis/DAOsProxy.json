@@ -221,11 +221,6 @@
                     "internalType": "uint32",
                     "name": "votes",
                     "type": "uint32"
-                  },
-                  {
-                    "internalType": "uint256[2]",
-                    "name": "__",
-                    "type": "uint256[2]"
                   }
                 ],
                 "internalType": "struct IMember.Info",
@@ -273,8 +268,8 @@
     "name": "deploy",
     "outputs": [
       {
-        "internalType": "contract IDAO",
-        "name": "",
+        "internalType": "contract DAO",
+        "name": "host",
         "type": "address"
       }
     ],
@@ -348,11 +343,6 @@
                     "internalType": "uint32",
                     "name": "votes",
                     "type": "uint32"
-                  },
-                  {
-                    "internalType": "uint256[2]",
-                    "name": "__",
-                    "type": "uint256[2]"
                   }
                 ],
                 "internalType": "struct IMember.Info",
@@ -395,13 +385,72 @@
         "internalType": "struct DAOs.InitVotePoolArgs",
         "name": "votePoolArgs",
         "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct DAOs.InitLedgerArgs",
+        "name": "ledgerArgs",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "image",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "external_link",
+            "type": "string"
+          },
+          {
+            "internalType": "uint32",
+            "name": "seller_fee_basis_points_first",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "seller_fee_basis_points_second",
+            "type": "uint32"
+          },
+          {
+            "internalType": "address",
+            "name": "fee_recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "contractURIPrefix",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct DAOs.InitAssetArgs",
+        "name": "assetArgs",
+        "type": "tuple"
       }
     ],
     "name": "deployAssetSalesDAO",
     "outputs": [
       {
-        "internalType": "contract IDAO",
-        "name": "",
+        "internalType": "contract DAO",
+        "name": "host",
         "type": "address"
       }
     ],
@@ -424,17 +473,17 @@
   "11": {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "addr",
-        "type": "address"
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
       }
     ],
-    "name": "contains",
+    "name": "get",
     "outputs": [
       {
-        "internalType": "bool",
+        "internalType": "contract DAO",
         "name": "",
-        "type": "bool"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -451,7 +500,7 @@
     "name": "at",
     "outputs": [
       {
-        "internalType": "contract IDAO",
+        "internalType": "contract DAO",
         "name": "",
         "type": "address"
       }
@@ -460,6 +509,19 @@
     "type": "function"
   },
   "13": {
+    "inputs": [],
+    "name": "impl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "14": {
     "inputs": [
       {
         "internalType": "address",

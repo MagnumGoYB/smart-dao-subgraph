@@ -4,8 +4,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import yargs from 'yargs'
 
-import { Configurator, Context, Contexts, Environment, ManifestValues } from './types'
-import { formatJson, sourceDeclaration } from './utils'
+import { Configurator, Context, Contexts, Environment, ManifestValues, Template } from './types'
+import { formatJson, sourceDeclaration, templateDeclaration } from './utils'
 
 const graph = require('@graphprotocol/graph-cli/src/cli').run as (args?: string[]) => Promise<void>
 const root = path.join(__dirname, '..')
@@ -13,10 +13,12 @@ const root = path.join(__dirname, '..')
 class SubgraphLoader<TVariables = any> {
   public readonly contexts: Contexts<TVariables>
   protected readonly configure: Configurator<TVariables>
+  protected readonly templates: Template[]
 
   constructor(public readonly root: string) {
     const config = require(path.join(root, 'subgraph.config.ts'))
 
+    this.templates = config.templates ?? []
     this.contexts = config.contexts
     this.configure = config.configure
   }
@@ -41,6 +43,9 @@ class SubgraphLoader<TVariables = any> {
     manifest.sources = configuration.sources
       .map((item) => sourceDeclaration(item, this.root))
       .filter((item) => item.address !== '0x0000000000000000000000000000000000000000')
+    manifest.templates = configuration.templates?.map((item) =>
+      templateDeclaration(item, this.root)
+    )
 
     const environment: Environment<TVariables> = {
       name: context.name,
@@ -50,12 +55,16 @@ class SubgraphLoader<TVariables = any> {
       manifest
     }
 
-    return new Subgraph(environment, this.root)
+    return new Subgraph(environment, this.root, this.templates)
   }
 }
 
 class Subgraph<TVariables = any> {
-  constructor(public readonly environment: Environment<TVariables>, public readonly root: string) {}
+  constructor(
+    public readonly environment: Environment<TVariables>,
+    public readonly root: string,
+    public readonly templates: Template[] = []
+  ) {}
 
   public async generateManifest() {
     const templateFile = path.join(root, 'templates/subgraph.template.yaml')
@@ -80,6 +89,18 @@ class Subgraph<TVariables = any> {
 
       fs.writeFileSync(outputFile, jsonOutput)
     })
+
+    this.environment.manifest.templates?.forEach((template) => {
+      const formattedFragments = template.events.map((event) => formatJson(event.fragment))
+      const jsonOutput = JSON.stringify(formattedFragments, undefined, 2)
+      const outputFile = path.join(this.root, template.abi.file)
+      const outputDir = path.dirname(outputFile)
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true })
+      }
+
+      fs.writeFileSync(outputFile, jsonOutput)
+    })
   }
 
   public async generateCode() {
@@ -88,6 +109,9 @@ class Subgraph<TVariables = any> {
     await graph(['codegen', '--skip-migrations', 'true', '--output-dir', outputDir])
 
     fs.renameSync(path.join(outputDir, 'schema.ts'), path.join(generatedDir, 'schema.ts'))
+    if (fs.existsSync(path.join(outputDir, 'templates.ts'))) {
+      fs.renameSync(path.join(outputDir, 'templates.ts'), path.join(generatedDir, 'templates.ts'))
+    }
 
     const globbed = glob.sync('**/*', { cwd: outputDir, absolute: true })
     const files = globbed.filter((item) => fs.statSync(item).isFile())
@@ -99,6 +123,26 @@ class Subgraph<TVariables = any> {
 
     files.forEach((item) => fs.renameSync(item, path.join(outputDir, path.basename(item))))
     directories.forEach((item) => fs.rmSync(item, { recursive: true }))
+
+    this.templates.forEach((template) => {
+      const templateFile = path.join(this.root, template.template)
+      const outputFile = path.join(this.root, template.destination)
+      const outputDir = path.dirname(outputFile)
+      const templateContent = fs.readFileSync(templateFile, 'utf8')
+
+      const compile = handlebars.compile(templateContent)
+      const replaced = compile(this.environment.variables, {
+        helpers: {
+          or: (a: any, b: any) => a ?? b
+        }
+      })
+
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true })
+      }
+
+      fs.writeFileSync(outputFile, replaced)
+    })
   }
 
   public async deploySubgraph() {

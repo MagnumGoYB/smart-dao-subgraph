@@ -6,8 +6,12 @@ import path from 'node:path'
 import type {
   DataSourceDeclaration,
   DataSourceUserDeclaration,
+  DataSourceTemplateDeclaration,
+  DataSourceTemplateUserDeclaration,
   EventHandlerDeclaration,
-  EventHandlerUserDeclaration
+  EventHandlerUserDeclaration,
+  SdkUserDeclaration,
+  SdkAbiDeclaration
 } from './types'
 import { AbiDeclarationType } from './types'
 
@@ -86,9 +90,13 @@ function sourceOrTemplateDeclaration(
   root: string
 ): DataSourceDeclaration
 function sourceOrTemplateDeclaration(
-  input: DataSourceUserDeclaration,
+  input: DataSourceTemplateUserDeclaration,
   root: string
-): DataSourceDeclaration {
+): DataSourceTemplateDeclaration
+function sourceOrTemplateDeclaration(
+  input: DataSourceUserDeclaration | DataSourceTemplateUserDeclaration,
+  root: string
+): DataSourceDeclaration | DataSourceTemplateDeclaration {
   const abiPath = input.abi ? input.abi : `abis/${input.name}.json`
   const abiPathAbsolute = resolveUserDefinedPath(abiPath, root)
   const abiInterface = loadAbiAtPath(abiPathAbsolute)
@@ -116,13 +124,13 @@ function sourceOrTemplateDeclaration(
   }
 
   return {
-    name: `${input.name}${input.version ?? ''}DataSource`,
+    name: `${input.name}DataSource`,
     file: mappingsFile,
     events: eventHandlerDeclarations,
     abi: {
       type: AbiDeclarationType.EVENTS,
-      name: `${input.name}${input.version ?? ''}Events`,
-      file: `generated/abis/events/${input.name}${input.version ?? ''}Events.json`,
+      name: `${input.name}Events`,
+      file: `generated/abis/events/${input.name}Events.json`,
       events: eventHandlerFragments,
       interface: abiInterface
     }
@@ -139,5 +147,28 @@ export function sourceDeclaration(
     ...baseDeclaration,
     ...(source.address ? { address: source.address } : undefined),
     ...(source.block ? { block: source.block } : undefined)
+  }
+}
+
+export function templateDeclaration(
+  template: DataSourceTemplateUserDeclaration,
+  root: string
+): DataSourceTemplateDeclaration {
+  return sourceOrTemplateDeclaration(template, root)
+}
+
+export function sdkDeclaration(sdk: SdkUserDeclaration, root: string): SdkAbiDeclaration {
+  const abis = Object.entries(sdk.abis as any).reduce((carry, [name, file]) => {
+    const abiPathAbsolute = resolveUserDefinedPath(file as string, root)
+    const abiInterface = loadAbiAtPath(abiPathAbsolute)
+    return { ...carry, [name]: abiInterface }
+  }, {} as Record<string, utils.Interface>)
+
+  return {
+    type: AbiDeclarationType.SDK,
+    name: `${sdk.name}Sdk`,
+    file: `generated/abis/sdks/${sdk.name}Sdk.json`,
+    functions: typeof sdk.functions === 'function' ? sdk.functions(abis) : sdk.functions,
+    interfaces: abis
   }
 }

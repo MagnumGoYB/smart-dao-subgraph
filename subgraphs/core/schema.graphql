@@ -1,5 +1,11 @@
-type DAOs @entity {
+type DAOsProxy @entity {
+  id: Bytes! # address
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+type DAO @entity {
   id: ID!
-  address: Bytes! # address
+  createdAt: Int!
   updatedAt: Int!
 }

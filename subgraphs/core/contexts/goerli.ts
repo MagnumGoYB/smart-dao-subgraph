@@ -6,8 +6,9 @@ export const goerli: Context<Variables> = {
   name: 'smart-dao',
   network: 'goerli',
   variables: {
-    contractAddresses: {
-      DAOsAddress: '0x4237E9a558Ff18Bac731ca8491573C97BbF2a60e'
+    block: 8245222,
+    persistent: {
+      DAOsProxyAddress: '0x4237E9a558Ff18Bac731ca8491573C97BbF2a60e'
     }
   }
 }

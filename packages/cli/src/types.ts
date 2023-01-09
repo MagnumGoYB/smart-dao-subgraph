@@ -14,15 +14,22 @@ export interface Context<TVariables> {
 
 export interface Configuration {
   sources: DataSourceUserDeclaration[]
+  templates?: DataSourceTemplateUserDeclaration[]
 }
 
 export interface ManifestValues {
   network: string
   sources: DataSourceDeclaration[]
+  templates?: DataSourceTemplateDeclaration[]
 }
 
 export interface Contexts<TVariables> {
   [context: string]: Context<TVariables>
+}
+
+export interface Template {
+  template: string
+  destination: string
 }
 
 export type Configurator<TVariables> = (variables: TVariables) => Configuration
@@ -46,6 +53,12 @@ export interface EventsAbiDeclaration extends AbiDeclaration {
   interface: utils.Interface
 }
 
+export interface SdkAbiDeclaration extends AbiDeclaration {
+  type: AbiDeclarationType.SDK
+  functions: utils.FunctionFragment[]
+  interfaces: Record<string, utils.Interface>
+}
+
 export interface DataSourceDeclaration {
   name: string
   file: string
@@ -63,6 +76,29 @@ export interface DataSourceUserDeclaration {
   address?: string
   block?: number
   events?: ((abi: utils.Interface) => EventHandlerUserDeclaration[]) | EventHandlerUserDeclaration[]
+}
+
+export interface DataSourceTemplateDeclaration {
+  name: string
+  file: string
+  abi: EventsAbiDeclaration
+  events: EventHandlerDeclaration[]
+}
+
+export interface DataSourceTemplateUserDeclaration {
+  name: string
+  abi?: string
+  file?: string
+  version?: string | number
+  events?: ((abi: utils.Interface) => EventHandlerUserDeclaration[]) | EventHandlerUserDeclaration[]
+}
+
+export interface SdkUserDeclaration {
+  name: string
+  abis?: Record<string, string>
+  functions:
+    | ((abis: Record<string, utils.Interface>) => utils.FunctionFragment[])
+    | utils.FunctionFragment[]
 }
 
 export interface Environment<TVariables> {
