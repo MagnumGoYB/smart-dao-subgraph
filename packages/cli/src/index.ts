@@ -5,7 +5,7 @@ import path from 'node:path'
 import yargs from 'yargs'
 
 import { Configurator, Context, Contexts, Environment, ManifestValues, Template } from './types'
-import { formatJson, sourceDeclaration, templateDeclaration } from './utils'
+import { formatJson, sdkDeclaration, sourceDeclaration, templateDeclaration } from './utils'
 
 const graph = require('@graphprotocol/graph-cli/src/cli').run as (args?: string[]) => Promise<void>
 const root = path.join(__dirname, '..')
@@ -46,6 +46,7 @@ class SubgraphLoader<TVariables = any> {
     manifest.templates = configuration.templates?.map((item) =>
       templateDeclaration(item, this.root)
     )
+    manifest.sdks = configuration.sdks?.map((item) => sdkDeclaration(item, this.root))
 
     const environment: Environment<TVariables> = {
       name: context.name,
@@ -94,6 +95,18 @@ class Subgraph<TVariables = any> {
       const formattedFragments = template.events.map((event) => formatJson(event.fragment))
       const jsonOutput = JSON.stringify(formattedFragments, undefined, 2)
       const outputFile = path.join(this.root, template.abi.file)
+      const outputDir = path.dirname(outputFile)
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true })
+      }
+
+      fs.writeFileSync(outputFile, jsonOutput)
+    })
+
+    this.environment.manifest.sdks?.forEach((sdk) => {
+      const formattedFragments = sdk.functions.map((fn) => formatJson(fn))
+      const jsonOutput = JSON.stringify(formattedFragments, undefined, 2)
+      const outputFile = path.join(this.root, sdk.file)
       const outputDir = path.dirname(outputFile)
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true })

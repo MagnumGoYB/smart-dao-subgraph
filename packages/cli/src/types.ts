@@ -15,12 +15,14 @@ export interface Context<TVariables> {
 export interface Configuration {
   sources: DataSourceUserDeclaration[]
   templates?: DataSourceTemplateUserDeclaration[]
+  sdks?: SdkUserDeclaration[]
 }
 
 export interface ManifestValues {
   network: string
   sources: DataSourceDeclaration[]
   templates?: DataSourceTemplateDeclaration[]
+  sdks?: SdkAbiDeclaration[]
 }
 
 export interface Contexts<TVariables> {

@@ -24,6 +24,10 @@ dataSources:
       abis:
         - name: {{abi.name}}
           file: {{abi.file}}
+        {{#each @root.sdks}}
+        - name: {{name}}
+          file: {{file}}
+        {{/each}}
       {{#if events}}
       eventHandlers:
         {{#each events}}
@@ -49,6 +53,10 @@ templates:
       abis:
         - name: {{abi.name}}
           file: {{abi.file}}
+        {{#each @root.sdks}}
+        - name: {{name}}
+          file: {{file}}
+        {{/each}}
       {{#if events}}
       eventHandlers:
         {{#each events}}
