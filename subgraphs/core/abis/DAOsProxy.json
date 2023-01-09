@@ -1,5 +1,5 @@
-{
-  "0": {
+[
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -12,7 +12,7 @@
     "name": "Created",
     "type": "event"
   },
-  "1": {
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -31,7 +31,7 @@
     "name": "OwnershipTransferred",
     "type": "event"
   },
-  "2": {
+  {
     "inputs": [],
     "name": "defaultIMPLs",
     "outputs": [
@@ -69,7 +69,7 @@
     "stateMutability": "view",
     "type": "function"
   },
-  "3": {
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -82,14 +82,14 @@
     "stateMutability": "view",
     "type": "function"
   },
-  "4": {
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  "5": {
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -102,14 +102,14 @@
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  "6": {
+  {
     "inputs": [],
     "name": "initDAOs",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  "7": {
+  {
     "inputs": [
       {
         "components": [
@@ -154,7 +154,7 @@
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  "8": {
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -276,7 +276,7 @@
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  "9": {
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -457,7 +457,7 @@
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  "10": {
+  {
     "inputs": [],
     "name": "length",
     "outputs": [
@@ -470,7 +470,7 @@
     "stateMutability": "view",
     "type": "function"
   },
-  "11": {
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -489,7 +489,7 @@
     "stateMutability": "view",
     "type": "function"
   },
-  "12": {
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -508,7 +508,7 @@
     "stateMutability": "view",
     "type": "function"
   },
-  "13": {
+  {
     "inputs": [],
     "name": "impl",
     "outputs": [
@@ -521,7 +521,7 @@
     "stateMutability": "view",
     "type": "function"
   },
-  "14": {
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -534,4 +534,4 @@
     "stateMutability": "nonpayable",
     "type": "function"
   }
-}
+]
