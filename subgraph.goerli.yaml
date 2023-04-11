@@ -7,7 +7,7 @@ schema:
 
 dataSources:
   - kind: ethereum/contract
-    name: DAOs
+    name: DAOsFactory
     network: goerli
     source:
       address: '0x4237E9a558Ff18Bac731ca8491573C97BbF2a60e'
@@ -17,12 +17,35 @@ dataSources:
       kind: ethereum/events
       apiVersion: 0.0.6
       language: wasm/assemblyscript
-      file: ./src/mapping.ts
+      file: ./src/factory.ts
       entities:
+        - DAOsFactory
         - DAO
       abis:
         - name: DAOs
           file: ./abis/DAOs.json
+        - name: DAO
+          file: ./abis/DAO.json
       eventHandlers:
         - event: Created(indexed address)
           handler: handleCreated
+
+templates:
+  - name: DAOInitializable
+    kind: ethereum/contract
+    network: goerli
+    source:
+      abi: DAO
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - DAO
+      abis:
+        - name: DAO
+          file: ./abis/DAO.json
+      eventHandlers:
+        - event: SetModule(indexed uint256,address)
+          handler: handleSetModule

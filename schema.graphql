@@ -1,3 +1,11 @@
+# DAOs Factory
+type DAOsFactory @entity {
+  "ID (hash)"
+  id: ID!
+  "Total of DAOs"
+  total: BigInt!
+}
+
 """
 DAO
 """
@@ -10,12 +18,18 @@ type DAO @entity {
   blockId: ID!
   "Block Number"
   blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
   "Name"
   name: String
   "Mission"
   mission: String
   "Description"
   description: String
+  "Brand Image URL"
+  brandImage: String
+  "Extend Data"
+  extend: Bytes
   "Operator"
   operator: User
   "Members"
