@@ -11,6 +11,3 @@
 build/
 generated/
 node_modules/
-
-# subgraph manifests are generated from a template
-subgraph.yaml

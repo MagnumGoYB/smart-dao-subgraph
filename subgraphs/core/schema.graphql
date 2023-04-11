@@ -1,6 +1,0 @@
-type DAO @entity {
-  id: ID!
-  name: String!
-  createdAt: Int!
-  updatedAt: Int!
-}

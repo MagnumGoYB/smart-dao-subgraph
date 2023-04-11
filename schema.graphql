@@ -1,0 +1,45 @@
+"""
+DAO
+"""
+type DAO @entity {
+  "ID (hash)"
+  id: ID!
+  "Owner"
+  owner: Bytes!
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Name"
+  name: String
+  "Mission"
+  mission: String
+  "Description"
+  description: String
+  "Operator"
+  operator: User
+  "Members"
+  members: [Member!] @derivedFrom(field: "dao")
+}
+
+"""
+User
+"""
+type User @entity {
+  "ID (hash)"
+  id: ID!
+  "Joined DAOs"
+  daos: [Member!] @derivedFrom(field: "user")
+}
+
+"""
+Many to many Member
+"""
+type Member @entity {
+  "ID (hash)"
+  id: ID!
+  "User"
+  user: User!
+  "DAO"
+  dao: DAO!
+}
