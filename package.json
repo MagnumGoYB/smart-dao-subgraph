@@ -2,9 +2,10 @@
   "scripts": {
     "build": "graph build",
     "codegen": "graph codegen",
-    "create-local": "graph create smart-dao --node http://127.0.0.1:8020",
-    "deploy": "graph deploy --product hosted-service smart-holder/smart-dao",
-    "deploy-local": "graph deploy smart-dao --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020",
+    "create-local": "graph create smart-dao --node http://127.0.0.1:8020 subgraph.local.yaml",
+    "deploy": "graph deploy --product hosted-service smart-holder/smart-dao subgraph.yaml",
+    "deploy-goerli": "graph deploy --network goerli --product hosted-service smart-holder/smart-dao subgraph.goerli.yaml",
+    "deploy-local": "graph deploy smart-dao --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020 subgraph.local.yaml",
     "prepare": "husky install || exit 0",
     "pretty": "pretty-quick --staged && prettier-package-json --write"
   },

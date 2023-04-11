@@ -1,0 +1,28 @@
+specVersion: 0.0.4
+description: Smart DAO Subgraph for Goerli Testnet
+repository: https://github.com/smart-holder/smart-dao-subgraph
+
+schema:
+  file: ./schema.graphql
+
+dataSources:
+  - kind: ethereum/contract
+    name: DAOs
+    network: goerli
+    source:
+      address: '0x3C8A520D2eECd6A4dFF0FB712D26628DaC173109'
+      abi: DAOs
+      startBlock: 8265432
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - DAO
+      abis:
+        - name: DAOs
+          file: ./abis/DAOs.json
+      eventHandlers:
+        - event: Created(indexed address)
+          handler: handleCreated
