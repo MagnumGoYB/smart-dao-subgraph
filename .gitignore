@@ -11,3 +11,4 @@
 build/
 generated/
 node_modules/
+subgraph.local.yaml

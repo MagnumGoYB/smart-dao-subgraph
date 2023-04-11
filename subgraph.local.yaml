@@ -8,7 +8,7 @@ dataSources:
     name: DAOs
     network: mainnet
     source:
-      address: '0x589195e94C8E71e04560EE4471BdA84C7ec04C84'
+      address: '0xa336aA9b1ED074800b93C2EE1951068bF015eAe3'
       abi: DAOs
     mapping:
       kind: ethereum/events
@@ -23,22 +23,3 @@ dataSources:
       eventHandlers:
         - event: Created(indexed address)
           handler: handleCreated
-# templates:
-#   - name: DAO
-#     kind: ethereum/contract
-#     network: mainnet
-#     source:
-#       abi: DAO
-#     mapping:
-#       kind: ethereum/events
-#       apiVersion: 0.0.6
-#       language: wasm/assemblyscript
-#       file: ./src/mapping.ts
-#       entities:
-#         - DAO
-#       abis:
-#         - name: DAO
-#           file: ./abis/DAO.json
-#       eventHandlers:
-#         - event: SetModule(indexed uint256,address)
-#           handler: handleDAOSetModule
