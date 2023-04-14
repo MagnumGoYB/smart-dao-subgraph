@@ -12,8 +12,10 @@ DAO
 type DAO @entity {
   "ID (hash)"
   id: ID!
-  "Owner"
-  owner: Bytes!
+  "Creator"
+  creator: User
+  "Executor"
+  executor: User
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -26,12 +28,10 @@ type DAO @entity {
   mission: String
   "Description"
   description: String
-  "Brand Image URL"
-  brandImage: String
+  "Image URL"
+  image: String
   "Extend Data"
   extend: Bytes
-  "Operator"
-  operator: User
   "Members"
   members: [Member!] @derivedFrom(field: "dao")
 }
@@ -42,6 +42,14 @@ User
 type User @entity {
   "ID (hash)"
   id: ID!
+  "Name"
+  name: String
+  "Description"
+  description: String
+  "Head Image URL"
+  image: String
+  "Vote Power"
+  votes: BigInt
   "Joined DAOs"
   daos: [Member!] @derivedFrom(field: "user")
 }
@@ -51,9 +59,13 @@ Many to many Member
 """
 type Member @entity {
   "ID (hash)"
+  # ERC-721 Token ID
+  # Address.concat('-').concat(ERC-721 Token ID)
   id: ID!
+  "Address"
+  address: Bytes!
   "User"
   user: User!
-  "DAO"
+  "Joined DAO"
   dao: DAO!
 }

@@ -1,12 +1,10 @@
-import { BigInt, log } from '@graphprotocol/graph-ts'
+import { BigInt, DataSourceContext, log } from '@graphprotocol/graph-ts'
 
 import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
-import { DAOInitializable } from './../generated/templates'
+import { DAOInitializable, MemberInitializable } from './../generated/templates'
 import { DAOsFactory } from '../generated/schema'
-import { fetchDAOBasicValue, getOrCreateDAO } from './utils'
+import { ONE_BI, ZERO_BI, fetchDAOBasicValue, getOrCreateDAO } from './utils'
 
-let ZERO_BI = BigInt.fromI32(0)
-let ONE_BI = BigInt.fromI32(1)
 let FACTORY_ADDRESS = '0x4237E9a558Ff18Bac731ca8491573C97BbF2a60e'
 
 export function handleCreated(event: CreatedEvent): void {
@@ -21,20 +19,26 @@ export function handleCreated(event: CreatedEvent): void {
   factory.total = factory.total.plus(ONE_BI)
   factory.save()
 
+  DAOInitializable.create(event.params.dao)
+  log.info('DAO Contract initialized: {}', [event.params.dao.toHex()])
+
   let dao = getOrCreateDAO(event.params.dao)
-  dao.owner = event.transaction.from
+  dao.creator = event.transaction.from.toHex()
   dao.blockId = event.block.hash.toHex()
   dao.blockNumber = event.block.number
   dao.blockTimestamp = event.block.timestamp
-  const daoPrimaryInfo = fetchDAOBasicValue(event.params.dao)
-  dao.name = daoPrimaryInfo.name
-  dao.description = daoPrimaryInfo.description
-  dao.mission = daoPrimaryInfo.mission
-  dao.extend = daoPrimaryInfo.extend
-  dao.brandImage = daoPrimaryInfo.brandImage
+  const daoBasicInfo = fetchDAOBasicValue(event.params.dao)
+  const memberAddress = daoBasicInfo.memberAddress
+
+  let context = new DataSourceContext()
+  context.setString('DAOAddress', event.params.dao.toHex())
+  MemberInitializable.createWithContext(memberAddress, context)
+  log.info('Member Contract initialized: {}', [memberAddress.toHex()])
+
+  dao.name = daoBasicInfo.name
+  dao.description = daoBasicInfo.description
+  dao.mission = daoBasicInfo.mission
+  dao.extend = daoBasicInfo.extend
+  dao.image = daoBasicInfo.image
   dao.save()
-
-  DAOInitializable.create(event.params.dao)
-
-  log.info('DAO initialized: {}', [dao.id])
 }

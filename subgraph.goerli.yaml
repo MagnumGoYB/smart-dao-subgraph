@@ -40,7 +40,7 @@ templates:
       kind: ethereum/events
       apiVersion: 0.0.6
       language: wasm/assemblyscript
-      file: ./src/mapping.ts
+      file: ./src/vaults/dao.ts
       entities:
         - DAO
       abis:
@@ -49,3 +49,24 @@ templates:
       eventHandlers:
         - event: SetModule(indexed uint256,address)
           handler: handleSetModule
+
+  - name: MemberInitializable
+    kind: ethereum/contract
+    network: goerli
+    source:
+      abi: Member
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/vaults/member.ts
+      entities:
+        - Member
+      abis:
+        - name: ERC721
+          file: ./abis/ERC721.json
+        - name: Member
+          file: ./abis/Member.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
