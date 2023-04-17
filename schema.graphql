@@ -13,9 +13,9 @@ type DAO @entity {
   "ID (hash)"
   id: ID!
   "Creator"
-  creator: User
+  creator: Account
   "Executor"
-  executor: User
+  executor: Account
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -39,9 +39,9 @@ type DAO @entity {
 }
 
 """
-User
+Account
 """
-type User @entity {
+type Account @entity {
   "ID (hash)"
   id: ID!
   "Name"
@@ -53,7 +53,7 @@ type User @entity {
   "Vote Power"
   votes: BigInt
   "Joined DAOs"
-  daos: [Member!] @derivedFrom(field: "user")
+  daos: [Member!] @derivedFrom(field: "account")
 }
 
 """
@@ -66,8 +66,8 @@ type Member @entity {
   id: ID!
   "Address"
   address: Bytes!
-  "User"
-  user: User!
+  "Account"
+  account: Account!
   "Joined DAO"
   dao: DAO!
 }

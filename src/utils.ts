@@ -1,6 +1,6 @@
 import { Address, Bytes, BigInt, log, ByteArray } from '@graphprotocol/graph-ts'
 
-import { DAO, Member, Proposal, User, VotePool } from '../generated/schema'
+import { Account, DAO, Member, Proposal, VotePool } from '../generated/schema'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
 import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
@@ -43,41 +43,41 @@ export function getOrCreateDAO(address: Address): DAO {
   return dao as DAO
 }
 
-export function getOrCreateUser(
+export function getOrCreateAccount(
   address: Address,
   memberAddress: Address,
   tokenId: BigInt
-): User {
+): Account {
   const id = address.toHex()
-  let user = User.load(id)
-  if (user === null) {
-    user = new User(id)
+  let account = Account.load(id)
+  if (account === null) {
+    account = new Account(id)
   }
   log.debug('Get Member ID {}', [tokenId.toString()])
   const info = fetchMemberValue(memberAddress, tokenId)
-  user.name = info.name
-  user.description = info.description
-  user.image = info.image
-  user.votes = info.votes
-  user.save()
-  return user as User
+  account.name = info.name
+  account.description = info.description
+  account.image = info.image
+  account.votes = info.votes
+  account.save()
+  return account as Account
 }
 
 export function getOrCreateMember(
   tokenId: BigInt,
   memberAddress: Address,
-  userAddress: Address,
+  accountAddress: Address,
   DAOAddress: Address
 ): Member {
   const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
   log.debug('Member ID {}', [memberId])
   const dao = getOrCreateDAO(DAOAddress)
-  const user = getOrCreateUser(userAddress, memberAddress, tokenId)
+  const account = getOrCreateAccount(accountAddress, memberAddress, tokenId)
   let member = Member.load(memberId)
   if (member === null) {
     member = new Member(memberId)
     member.dao = dao.id
-    member.user = user.id
+    member.account = account.id
     member.address = memberAddress
     member.save()
   }
@@ -151,15 +151,15 @@ export function setExecutor(memberAddress: Address, tokenId: BigInt): void {
     log.warning('DAO Set Executor. DAO {} not found', [member.dao])
     return
   }
-  const user = User.load(member.user)
-  if (user === null) {
-    log.warning('DAO Set Executor. User {} not found', [member.user])
+  const account = Account.load(member.account)
+  if (account === null) {
+    log.warning('DAO Set Executor. Account {} not found', [member.account])
     return
   }
-  dao.executor = member.user
+  dao.executor = member.account
   dao.save()
 
-  log.info('DAO Update Executor Success. User {}', [user.id])
+  log.info('DAO Update Executor Success. Account {}', [account.id])
 }
 
 export function getOrCreateVotePoolProposal(
@@ -239,7 +239,7 @@ export function fetchVoteProposalValue(
         .concat('-')
         .concat(proposal.value.originId.toHex())
       const member = Member.load(memberId)
-      if (member !== null) origin = Address.fromString(member.user)
+      if (member !== null) origin = Address.fromString(member.account)
     }
     return {
       isAnonymous,

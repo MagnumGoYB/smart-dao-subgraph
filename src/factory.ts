@@ -1,4 +1,4 @@
-import { BigInt, DataSourceContext, log } from '@graphprotocol/graph-ts'
+import { DataSourceContext, log } from '@graphprotocol/graph-ts'
 
 import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
 import {

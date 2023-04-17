@@ -6,12 +6,12 @@ import {
   getOrCreateMember,
   setExecutor
 } from './../utils'
+import { Account, Member } from '../../generated/schema'
 import {
   Change as ChangeEvent,
   Transfer as TransferEvent,
   Update as UpdateEvent
 } from './../../generated/templates/MemberInitializable/Member'
-import { Member, User } from '../../generated/schema'
 
 const context = dataSource.context()
 const DAOAddress = context.getString('DAOAddress')
@@ -38,9 +38,9 @@ export function handleTransfer(event: TransferEvent): void {
       Address.fromString(DAOAddress)
     )
 
-    log.info('DAO Member Created. Member {}, User {}, DAO {}', [
+    log.info('DAO Member Created. Member {}, Account {}, DAO {}', [
       member.id,
-      member.user,
+      member.account,
       member.dao
     ])
   }
@@ -55,19 +55,19 @@ export function handleUpdate(event: UpdateEvent): void {
     log.warning('DAO Member Update. Member {} not found', [memberId])
     return
   }
-  let user = User.load(member.user)
-  if (user === null) {
-    log.warning('DAO Member Update. User {} not found', [member.user])
+  let account = Account.load(member.account)
+  if (account === null) {
+    log.warning('DAO Member Update. Account {} not found', [member.account])
     return
   }
   const info = fetchMemberValue(memberAddress, tokenId)
-  user.name = info.name
-  user.description = info.description
-  user.image = info.image
-  user.votes = info.votes
-  user.save()
+  account.name = info.name
+  account.description = info.description
+  account.image = info.image
+  account.votes = info.votes
+  account.save()
 
-  log.info('User Update. User {}', [user.id])
+  log.info('Account Update. User {}', [account.id])
 }
 
 export function handleChange(event: ChangeEvent): void {
