@@ -123,3 +123,26 @@ export function fetchMemberValue(
     } as MemberInfo
   }
 }
+
+export function setExecutor(memberAddress: Address, tokenId: BigInt): void {
+  const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
+  const member = Member.load(memberId)
+  if (member === null) {
+    log.warning('DAO Set Executor. Member {} not found', [memberId])
+    return
+  }
+  let dao = DAO.load(member.dao)
+  if (dao === null) {
+    log.warning('DAO Set Executor. DAO {} not found', [member.dao])
+    return
+  }
+  const user = User.load(member.user)
+  if (user === null) {
+    log.warning('DAO Set Executor. User {} not found', [member.user])
+    return
+  }
+  dao.executor = member.user
+  dao.save()
+
+  log.info('DAO Update Executor Success. User {}', [user.id])
+}

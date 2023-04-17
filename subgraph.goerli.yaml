@@ -70,3 +70,7 @@ templates:
       eventHandlers:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
+        - event: Update(indexed uint256)
+          handler: handleUpdate
+        - event: Change(indexed uint256,uint256)
+          handler: handleChange
