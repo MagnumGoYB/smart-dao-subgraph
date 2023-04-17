@@ -1,7 +1,11 @@
 import { BigInt, DataSourceContext, log } from '@graphprotocol/graph-ts'
 
 import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
-import { DAOInitializable, MemberInitializable } from './../generated/templates'
+import {
+  DAOInitializable,
+  MemberInitializable,
+  VotePoolInitializable
+} from './../generated/templates'
 import { DAOsFactory } from '../generated/schema'
 import { ONE_BI, ZERO_BI, fetchDAOBasicValue, getOrCreateDAO } from './utils'
 
@@ -22,7 +26,7 @@ export function handleCreated(event: CreatedEvent): void {
   DAOInitializable.create(event.params.dao)
   log.info('DAO Contract initialized: {}', [event.params.dao.toHex()])
 
-  let dao = getOrCreateDAO(event.params.dao)
+  const dao = getOrCreateDAO(event.params.dao)
   dao.creator = event.transaction.from.toHex()
   dao.blockId = event.block.hash.toHex()
   dao.blockNumber = event.block.number
@@ -30,10 +34,15 @@ export function handleCreated(event: CreatedEvent): void {
   const daoBasicInfo = fetchDAOBasicValue(event.params.dao)
   const memberAddress = daoBasicInfo.memberAddress
 
-  let context = new DataSourceContext()
+  const context = new DataSourceContext()
   context.setString('DAOAddress', event.params.dao.toHex())
+
   MemberInitializable.createWithContext(memberAddress, context)
   log.info('Member Contract initialized: {}', [memberAddress.toHex()])
+
+  const votePoolAddress = daoBasicInfo.votePoolAddress
+  VotePoolInitializable.createWithContext(votePoolAddress, context)
+  log.info('VotePool Contract initialized: {}', [votePoolAddress.toHex()])
 
   dao.name = daoBasicInfo.name
   dao.description = daoBasicInfo.description

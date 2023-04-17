@@ -34,6 +34,8 @@ type DAO @entity {
   extend: Bytes
   "Members"
   members: [Member!] @derivedFrom(field: "dao")
+  "votePool"
+  votePool: VotePool
 }
 
 """
@@ -60,7 +62,7 @@ Many to many Member
 type Member @entity {
   "ID (hash)"
   # ERC-721 Token ID
-  # Address.concat('-').concat(ERC-721 Token ID)
+  # address.concat('-').concat(ERC-721 Token ID)
   id: ID!
   "Address"
   address: Bytes!
@@ -68,4 +70,60 @@ type Member @entity {
   user: User!
   "Joined DAO"
   dao: DAO!
+}
+
+"""
+Vote Pool
+"""
+type VotePool @entity {
+  "ID (hash)"
+  # dao.concat('-').concat(address)
+  id: ID!
+  "Address"
+  address: Bytes!
+  "Belong DAO"
+  dao: DAO!
+  "Proposals"
+  proposals: [Proposal!] @derivedFrom(field: "proposal")
+}
+
+"""
+Vote Proposal
+"""
+type Proposal @entity {
+  "ID (hash)"
+  id: ID!
+  "Belong Vote Pool"
+  proposal: VotePool!
+  "is Anonymous"
+  isAnonymous: Boolean!
+  "Origin Member"
+  # Is Anonymous, is Null
+  origin: Member
+  "Origin Address"
+  originAddress: Bytes!
+  "Name"
+  name: String
+  "Description"
+  description: String
+  "Lifespan"
+  lifespan: BigInt
+  "Expiry"
+  expiry: BigInt
+  #       address origin; // 发起人 address
+  #       uint256 originId; // 发起人成员id (member id),如果为0表示匿名成员
+  #       address[] target; // 目标合约,决议执行合约地址列表
+  #       uint256 lifespan; // 投票生命周期单位（分钟）
+  #       uint256 expiry; // 过期时间,为0时永不过期
+  #       uint256 passRate; // 通过率不小于全体票数50% 1/10000
+  #       int256 loopCount; // 执行循环次数, -1表示永久定期执行决议
+  #       uint256 loopTime; // 执行循环间隔时间,不等于0时必须大于1分钟,0只执行一次
+  #       uint256 voteTotal; // 投票总数
+  #       uint256 agreeTotal; // 通过总数
+  #       uint256 executeTime; // 上次执行的时间
+  #       uint256 idx; //
+  #       bool isAgree; // 是否通过采用
+  #       bool isClose; // 投票是否截止
+  #       bool isExecuted; // 是否已执行完成
+  #       bytes[] data; // 调用方法与实参列表
 }

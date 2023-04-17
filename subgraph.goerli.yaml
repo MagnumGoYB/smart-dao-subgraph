@@ -74,3 +74,30 @@ templates:
           handler: handleUpdate
         - event: Change(indexed uint256,uint256)
           handler: handleChange
+
+  - name: VotePoolInitializable
+    kind: ethereum/contract
+    network: goerli
+    source:
+      abi: VotePool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/vaults/vote-pool.ts
+      entities:
+        - VotePool
+      abis:
+        - name: DAO
+          file: ./abis/DAO.json
+        - name: VotePool
+          file: ./abis/VotePool.json
+      eventHandlers:
+        - event: Created(uint256)
+          handler: handleCreated
+        # - event: Vote(indexed uint256,uint256,int256)
+        #   handler: handleVote
+        # - event: Close(indexed uint256)
+        #   handler: handleClose
+        # - event: Execute(indexed uint256)
+        #   handler: handleExecute

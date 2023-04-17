@@ -1,0 +1,770 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "CheckInterfaceNoMatch",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CreateProposalLifespanLimitError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CreateProposalLoopTimeLimitError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CreateProposalVotePassEateLimitError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DuplicateVoteError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PermissionDenied",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PermissionDeniedForOnlyDAO",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposalAlreadyExistsInVotePool",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposalClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposalDefaultLifespanLimitError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposalNonExistsInVotePool",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposalNotPassed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "VoteInsufficientVotes",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "VotesZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "VotingMemberNoMatch",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "Close",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "Created",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "Execute",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "version",
+          "type": "uint8"
+        }
+      ],
+      "name": "Initialized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "member",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "int256",
+          "name": "votes",
+          "type": "int256"
+        }
+      ],
+      "name": "Vote",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "checkInterface",
+      "outputs": [],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "host",
+      "outputs": [
+        {
+          "internalType": "contract IDAO",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "lifespan",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "host",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_lifespan",
+          "type": "uint256"
+        }
+      ],
+      "name": "initVotePool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "impl",
+          "type": "address"
+        }
+      ],
+      "name": "upgrade",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "description",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "getProposal",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "origin",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "target",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lifespan",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expiry",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "passRate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "int256",
+              "name": "loopCount",
+              "type": "int256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "loopTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "voteTotal",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "agreeTotal",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "executeTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "idx",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "isAgree",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isClose",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isExecuted",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "data",
+              "type": "bytes[]"
+            }
+          ],
+          "internalType": "struct IVotePool.Proposal",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "exists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "origin",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "target",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lifespan",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expiry",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "passRate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "int256",
+              "name": "loopCount",
+              "type": "int256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "loopTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "voteTotal",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "agreeTotal",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "executeTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "idx",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "isAgree",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isClose",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isExecuted",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "data",
+              "type": "bytes[]"
+            }
+          ],
+          "internalType": "struct IVotePool.Proposal",
+          "name": "arg0",
+          "type": "tuple"
+        }
+      ],
+      "name": "create",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address[]",
+          "name": "target",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lifespan",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "passRate",
+          "type": "uint256"
+        },
+        {
+          "internalType": "int256",
+          "name": "loopCount",
+          "type": "int256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "loopTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "originId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "data",
+          "type": "bytes[]"
+        }
+      ],
+      "name": "create2",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "member",
+          "type": "uint256"
+        },
+        {
+          "internalType": "int256",
+          "name": "votes",
+          "type": "int256"
+        },
+        {
+          "internalType": "bool",
+          "name": "tryExecute",
+          "type": "bool"
+        }
+      ],
+      "name": "vote",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "tryExecute",
+          "type": "bool"
+        }
+      ],
+      "name": "tryClose",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "execute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "total",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "indexAt",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "origin",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "target",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lifespan",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expiry",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "passRate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "int256",
+              "name": "loopCount",
+              "type": "int256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "loopTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "voteTotal",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "agreeTotal",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "executeTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "idx",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "isAgree",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isClose",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isExecuted",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "data",
+              "type": "bytes[]"
+            }
+          ],
+          "internalType": "struct IVotePool.Proposal",
+          "name": "pro",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    }
+  ],
+  "contractName": "VotePool"
+}
