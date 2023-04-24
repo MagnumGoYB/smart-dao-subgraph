@@ -43,7 +43,10 @@ Account
 """
 type Account @entity {
   "ID (hash)"
+  # (DAO ID).concat('-').concat(address)
   id: ID!
+  "Address"
+  address: Bytes!
   "Name"
   name: String
   "Description"
@@ -99,7 +102,7 @@ type Proposal @entity {
   isAnonymous: Boolean!
   "Origin Member"
   # Is Anonymous, is Null
-  origin: Member
+  origin: Account
   "Origin Address"
   originAddress: Bytes!
   "Name"

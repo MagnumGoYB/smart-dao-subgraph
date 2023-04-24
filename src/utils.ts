@@ -45,13 +45,17 @@ export function getOrCreateDAO(address: Address): DAO {
 
 export function getOrCreateAccount(
   address: Address,
+  DAOAddress: Address,
   memberAddress: Address,
   tokenId: BigInt
 ): Account {
   const id = address.toHex()
-  let account = Account.load(id)
+  const accountId = DAOAddress.toHex().concat('-').concat(id)
+  log.debug('Account ID {}', [accountId])
+  let account = Account.load(accountId)
   if (account === null) {
-    account = new Account(id)
+    account = new Account(accountId)
+    account.address = address
   }
   log.debug('Get Member ID {}', [tokenId.toString()])
   const info = fetchMemberValue(memberAddress, tokenId)
@@ -72,7 +76,13 @@ export function getOrCreateMember(
   const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
   log.debug('Member ID {}', [memberId])
   const dao = getOrCreateDAO(DAOAddress)
-  const account = getOrCreateAccount(accountAddress, memberAddress, tokenId)
+  const account = getOrCreateAccount(
+    accountAddress,
+    DAOAddress,
+    memberAddress,
+    tokenId
+  )
+  log.debug('Memmber Account ID {}', [account.id])
   let member = Member.load(memberId)
   if (member === null) {
     member = new Member(memberId)
@@ -192,8 +202,8 @@ export function getOrCreateVotePoolProposal(
   voteProposal.name = info.name
   voteProposal.description = info.description
   info.isAnonymous
-    ? (voteProposal.origin = info.origin.toHex())
-    : (voteProposal.origin = null)
+    ? (voteProposal.origin = null)
+    : (voteProposal.origin = dao.id.concat('-').concat(info.origin.toHex()))
   voteProposal.isAnonymous = info.isAnonymous
   voteProposal.originAddress = info.origin
   voteProposal.lifespan = info.lifespan
@@ -238,8 +248,18 @@ export function fetchVoteProposalValue(
         .toHex()
         .concat('-')
         .concat(proposal.value.originId.toHex())
+      log.debug('Vote Proposal is Not Anonymous Member ID {}', [memberId])
       const member = Member.load(memberId)
-      if (member !== null) origin = Address.fromString(member.account)
+      if (member !== null) {
+        log.debug('Vote Proposal Member Found Account ID {}', [member.account])
+        const account = Account.load(member.account)
+        if (account !== null) {
+          log.debug('Vote Proposal Account Found Address {}', [
+            account.address.toHex()
+          ])
+          origin = Address.fromBytes(account.address)
+        }
+      }
     }
     return {
       isAnonymous,

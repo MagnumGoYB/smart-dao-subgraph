@@ -27,7 +27,7 @@ export function handleCreated(event: CreatedEvent): void {
   log.info('DAO Contract initialized: {}', [event.params.dao.toHex()])
 
   const dao = getOrCreateDAO(event.params.dao)
-  dao.creator = event.transaction.from.toHex()
+  dao.creator = dao.id.concat('-').concat(event.transaction.from.toHex())
   dao.blockId = event.block.hash.toHex()
   dao.blockNumber = event.block.number
   dao.blockTimestamp = event.block.timestamp
