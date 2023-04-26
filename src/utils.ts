@@ -1,6 +1,20 @@
-import { Address, Bytes, BigInt, log, ByteArray } from '@graphprotocol/graph-ts'
+import {
+  Address,
+  Bytes,
+  BigInt,
+  log,
+  ByteArray,
+  ethereum
+} from '@graphprotocol/graph-ts'
 
-import { Account, DAO, Member, Proposal, VotePool } from '../generated/schema'
+import {
+  Account,
+  DAO,
+  Ledger,
+  Member,
+  Proposal,
+  VotePool
+} from '../generated/schema'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
 import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
@@ -8,6 +22,7 @@ import { VotePool as VotePoolContract } from '../generated/templates/VotePoolIni
 export const ZERO_BI = BigInt.fromI32(0)
 export const ONE_BI = BigInt.fromI32(1)
 export const ADDRESS_ZERO = Address.zero()
+
 export class DAOPrimaryInfo {
   name: string
   description: string
@@ -16,6 +31,8 @@ export class DAOPrimaryInfo {
   extend: Bytes | null
   memberAddress: Address
   votePoolAddress: Address
+  operatorAddress: Address
+  ledgerAddress: Address
 }
 
 export class MemberInfo {
@@ -32,6 +49,15 @@ export class ProposalInfo {
   description: string | null
   lifespan: BigInt | null
   expiry: BigInt | null
+}
+
+export class CreateLedgerParam {
+  from: Address | null
+  balance: BigInt | null
+  name: string | null
+  description: string | null
+  to: Address | null
+  member: BigInt | null
 }
 
 export function getOrCreateDAO(address: Address): DAO {
@@ -82,7 +108,7 @@ export function getOrCreateMember(
     memberAddress,
     tokenId
   )
-  log.debug('Memmber Account ID {}', [account.id])
+  log.debug('Member Account ID {}', [account.id])
   let member = Member.load(memberId)
   if (member === null) {
     member = new Member(memberId)
@@ -103,6 +129,8 @@ export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
   const extendResult = contract.try_extend()
   const memberAddress = contract.try_member()
   const votePoolAddress = contract.try_root()
+  const operatorAddress = contract.try_operator()
+  const ledgerAddress = contract.try_ledger()
   return {
     name: nameResult.reverted ? 'unknown' : nameResult.value,
     description: descriptionResult.reverted
@@ -114,7 +142,11 @@ export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
     memberAddress: memberAddress.reverted ? ADDRESS_ZERO : memberAddress.value,
     votePoolAddress: votePoolAddress.reverted
       ? ADDRESS_ZERO
-      : votePoolAddress.value
+      : votePoolAddress.value,
+    operatorAddress: operatorAddress.reverted
+      ? ADDRESS_ZERO
+      : operatorAddress.value,
+    ledgerAddress: ledgerAddress.reverted ? ADDRESS_ZERO : ledgerAddress.value
   } as DAOPrimaryInfo
 }
 
@@ -197,7 +229,7 @@ export function getOrCreateVotePoolProposal(
   if (voteProposal === null) {
     voteProposal = new Proposal(proposalId)
   }
-  voteProposal.proposal = votePool.id
+  voteProposal.votePool = votePool.id
   const info = fetchVoteProposalValue(id, address, DAOAddress)
   voteProposal.name = info.name
   voteProposal.description = info.description
@@ -270,4 +302,78 @@ export function fetchVoteProposalValue(
       expiry: proposal.value.expiry
     } as ProposalInfo
   }
+}
+
+/**
+ * @export
+ * @param {string} type Reserved = 0x0, Receive = 0x1, Deposit = 0x2, Withdraw = 0x3, Release = 0x4, AssetIncome = 0x5
+ * @param {Address} address
+ * @param {Bytes} txHash
+ * @param {Address} DAOAddress
+ * @param {ethereum.Block} block
+ * @param {CreateLedgerParam} params
+ * @return {*}  {Ledger}
+ */
+export function getOrCreateLedger(
+  type: BigInt,
+  address: Address,
+  txHash: Bytes,
+  DAOAddress: Address,
+  block: ethereum.Block,
+  params: CreateLedgerParam
+): Ledger {
+  const ledgerId = address.toHex().concat('-').concat(txHash.toHex()) // address.concat('-').concat(txHash)
+  const dao = getOrCreateDAO(DAOAddress)
+  let ledger = Ledger.load(ledgerId)
+  if (ledger === null) {
+    ledger = new Ledger(ledgerId)
+    ledger.dao = dao.id
+    ledger.address = address
+    ledger.txHash = txHash
+    ledger.blockId = block.hash.toHex()
+    ledger.blockNumber = block.number
+    ledger.blockTimestamp = block.timestamp
+    ledger.type = 'Reserved'
+    const t = type.toU32()
+    const receive = BigInt.fromI32(1).toU32()
+    const deposit = BigInt.fromI32(2).toU32()
+    const withdraw = BigInt.fromI32(3).toU32()
+    const release = BigInt.fromI32(4).toU32()
+    const assetIncome = BigInt.fromI32(5).toU32()
+    switch (t) {
+      case receive:
+        ledger.target = params.from
+        ledger.balance = params.balance
+        ledger.type = 'Receive'
+        break
+      case deposit:
+        ledger.target = params.from
+        ledger.balance = params.balance
+        ledger.name = params.name
+        ledger.description = params.description
+        ledger.type = 'Deposit'
+        break
+      case withdraw:
+        ledger.target = params.to
+        ledger.balance = params.balance
+        ledger.description = params.description
+        ledger.type = 'Withdraw'
+        break
+      case release:
+        ledger.target = params.to
+        ledger.balance = params.balance
+        ledger.member = params.member
+        ledger.type = 'Release'
+        break
+      case assetIncome:
+        ledger.target = params.to
+        ledger.balance = params.balance
+        ledger.type = 'AssetIncome'
+        break
+    }
+    ledger.state = 'Enable' // default state is "Enable"
+    ledger.save()
+    log.info('New Ledger ID {}, Type {}', [ledgerId, type.toHex()])
+  }
+  return ledger as Ledger
 }

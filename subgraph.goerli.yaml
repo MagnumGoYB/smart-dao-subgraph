@@ -10,7 +10,7 @@ dataSources:
     name: DAOsFactory
     network: goerli
     source:
-      address: '0x4237E9a558Ff18Bac731ca8491573C97BbF2a60e'
+      address: '0x555309800BDDd188A5B51728d5611725d9bBad02'
       abi: DAOs
       startBlock: 8248925
     mapping:
@@ -101,3 +101,32 @@ templates:
         #   handler: handleClose
         # - event: Execute(indexed uint256)
         #   handler: handleExecute
+
+  - name: LedgerInitializable
+    kind: ethereum/contract
+    network: goerli
+    source:
+      abi: Ledger
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/vaults/ledger.ts
+      entities:
+        - Ledger
+      abis:
+        - name: Ledger
+          file: ./abis/Ledger.json
+      eventHandlers:
+        - event: Receive(indexed address,uint256)
+          handler: handleReceive
+        - event: ReleaseLog(indexed address,uint256,string)
+          handler: handleReleaseLog
+        - event: Deposit(indexed address,uint256,string,string)
+          handler: handleDeposit
+        - event: Withdraw(indexed address,uint256,string)
+          handler: handleWithdraw
+        - event: Release(indexed uint256,indexed address,uint256)
+          handler: handleRelease
+        - event: AssetIncome(indexed address,indexed uint256,indexed address,address,uint256,uint256,uint8)
+          handler: handleAssetIncome

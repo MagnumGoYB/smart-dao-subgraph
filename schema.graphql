@@ -36,6 +36,8 @@ type DAO @entity {
   members: [Member!] @derivedFrom(field: "dao")
   "votePool"
   votePool: VotePool
+  "Ledger Address"
+  ledgerAddress: Bytes
 }
 
 """
@@ -87,7 +89,7 @@ type VotePool @entity {
   "Belong DAO"
   dao: DAO!
   "Proposals"
-  proposals: [Proposal!] @derivedFrom(field: "proposal")
+  proposals: [Proposal!] @derivedFrom(field: "votePool")
 }
 
 """
@@ -97,7 +99,7 @@ type Proposal @entity {
   "ID (hash)"
   id: ID!
   "Belong Vote Pool"
-  proposal: VotePool!
+  votePool: VotePool!
   "is Anonymous"
   isAnonymous: Boolean!
   "Origin Member"
@@ -113,20 +115,76 @@ type Proposal @entity {
   lifespan: BigInt
   "Expiry"
   expiry: BigInt
-  #       address origin; // 发起人 address
-  #       uint256 originId; // 发起人成员id (member id),如果为0表示匿名成员
-  #       address[] target; // 目标合约,决议执行合约地址列表
-  #       uint256 lifespan; // 投票生命周期单位（分钟）
-  #       uint256 expiry; // 过期时间,为0时永不过期
-  #       uint256 passRate; // 通过率不小于全体票数50% 1/10000
-  #       int256 loopCount; // 执行循环次数, -1表示永久定期执行决议
-  #       uint256 loopTime; // 执行循环间隔时间,不等于0时必须大于1分钟,0只执行一次
-  #       uint256 voteTotal; // 投票总数
-  #       uint256 agreeTotal; // 通过总数
-  #       uint256 executeTime; // 上次执行的时间
-  #       uint256 idx; //
-  #       bool isAgree; // 是否通过采用
-  #       bool isClose; // 投票是否截止
-  #       bool isExecuted; // 是否已执行完成
-  #       bytes[] data; // 调用方法与实参列表
+  # id: number;//           int primary key auto_increment,
+  # host: string;//         varchar (64)                 not null, -- dao host
+  # address: string;//      varchar (64)                 not null, -- 投票池合约地址
+  # proposal_id: string;//  varchar (72)                 not null, -- 提案id
+  # name: string;//         varchar (64)                 not null, -- 提案名称
+  # description: string;//  varchar (1024)               not null, -- 提案描述
+  # origin: string;//       varchar (64)                 not null, -- 发起人 address
+  # originId: string;//     varchar (72)                 not null, -- 发起人成员id (member id),如果为0表示匿名成员
+  # target: string[];//     josn                             null, -- 执行目标合约地址
+  # data: string[];//       text                             null, -- 执行参数数据
+  # lifespan: number;//     bigint                       not null, -- 投票生命周期（minutes）
+  # expiry: number;//       bigint                       not null, -- 过期时间（区块链时间单位）
+  # passRate: number;//     int                          not null, -- 通过率不小于全体票数50% (0-10000)
+  # loopCount: number;//    int              default (0) not null, -- 执行循环次数: -1无限循环,0不循环
+  # loopTime: number;//     bigint           default (0) not null, -- 执行循环间隔时间
+  # voteTotal: number;//    bigint           default (0) not null, -- 投票总数
+  # agreeTotal: number;//   bigint           default (0) not null, -- 通过总数
+  # executeTime: number;//  bigint           default (0) not null, -- 上次执行的时间
+  # isAgree: boolean;//     bit              default (0) not null, -- 是否通过采用
+  # isClose: boolean;//     bit              default (0) not null, -- 投票是否截止
+  # isExecuted: boolean;//  bit              default (0) not null  -- 是否已执行完成
+  # time: number;//         bigint                       not null,
+  # modify: number;//       bigint                       not null,
+  # blockNumber: number;//  int                          not null
+}
+
+enum LedgerType {
+  Reserved
+  Receive
+  Deposit
+  Withdraw
+  Release
+  AssetIncome
+}
+
+enum State {
+  Enable
+  Disable
+}
+
+type Ledger @entity {
+  "ID (hash)"
+  # address.concat('-').concat(txHash)
+  id: ID!
+  "Address"
+  address: Bytes!
+  "Tx Hash"
+  txHash: Bytes!
+  "DAO Host"
+  dao: DAO!
+  "Type"
+  type: LedgerType
+  "Name"
+  name: String
+  "Description"
+  description: String
+  "Target Address"
+  target: Bytes
+  "Amount"
+  balance: BigInt
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
+  "Member ID"
+  member: BigInt
+  "Enable State"
+  state: State!
+  # assetIncome_id: number;
+  # assetIncome?: LedgerAssetIncome;
 }

@@ -3,6 +3,7 @@ import { DataSourceContext, log } from '@graphprotocol/graph-ts'
 import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
 import {
   DAOInitializable,
+  LedgerInitializable,
   MemberInitializable,
   VotePoolInitializable
 } from './../generated/templates'
@@ -26,17 +27,24 @@ export function handleCreated(event: CreatedEvent): void {
   DAOInitializable.create(event.params.dao)
   log.info('DAO Contract initialized: {}', [event.params.dao.toHex()])
 
+  const context = new DataSourceContext()
+  context.setString('DAOAddress', event.params.dao.toHex())
+
   const dao = getOrCreateDAO(event.params.dao)
   dao.creator = dao.id.concat('-').concat(event.transaction.from.toHex())
   dao.blockId = event.block.hash.toHex()
   dao.blockNumber = event.block.number
   dao.blockTimestamp = event.block.timestamp
   const daoBasicInfo = fetchDAOBasicValue(event.params.dao)
+
+  if (daoBasicInfo.ledgerAddress) {
+    LedgerInitializable.createWithContext(daoBasicInfo.ledgerAddress, context)
+    log.info('Ledger Contract initialized: {}', [
+      daoBasicInfo.ledgerAddress.toHex()
+    ])
+  }
+
   const memberAddress = daoBasicInfo.memberAddress
-
-  const context = new DataSourceContext()
-  context.setString('DAOAddress', event.params.dao.toHex())
-
   MemberInitializable.createWithContext(memberAddress, context)
   log.info('Member Contract initialized: {}', [memberAddress.toHex()])
 
