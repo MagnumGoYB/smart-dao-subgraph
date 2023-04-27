@@ -16,7 +16,8 @@ export function handleCreated(event: CreatedEvent): void {
   getOrCreateVotePoolProposal(
     event.params.id,
     dataSource.address(),
-    Address.fromString(DAOAddress)
+    Address.fromString(DAOAddress),
+    event.block
   )
 }
 

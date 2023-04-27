@@ -115,30 +115,38 @@ type Proposal @entity {
   lifespan: BigInt
   "Expiry"
   expiry: BigInt
-  # id: number;//           int primary key auto_increment,
-  # host: string;//         varchar (64)                 not null, -- dao host
-  # address: string;//      varchar (64)                 not null, -- 投票池合约地址
-  # proposal_id: string;//  varchar (72)                 not null, -- 提案id
-  # name: string;//         varchar (64)                 not null, -- 提案名称
-  # description: string;//  varchar (1024)               not null, -- 提案描述
-  # origin: string;//       varchar (64)                 not null, -- 发起人 address
-  # originId: string;//     varchar (72)                 not null, -- 发起人成员id (member id),如果为0表示匿名成员
-  # target: string[];//     josn                             null, -- 执行目标合约地址
-  # data: string[];//       text                             null, -- 执行参数数据
-  # lifespan: number;//     bigint                       not null, -- 投票生命周期（minutes）
-  # expiry: number;//       bigint                       not null, -- 过期时间（区块链时间单位）
-  # passRate: number;//     int                          not null, -- 通过率不小于全体票数50% (0-10000)
-  # loopCount: number;//    int              default (0) not null, -- 执行循环次数: -1无限循环,0不循环
-  # loopTime: number;//     bigint           default (0) not null, -- 执行循环间隔时间
-  # voteTotal: number;//    bigint           default (0) not null, -- 投票总数
-  # agreeTotal: number;//   bigint           default (0) not null, -- 通过总数
-  # executeTime: number;//  bigint           default (0) not null, -- 上次执行的时间
-  # isAgree: boolean;//     bit              default (0) not null, -- 是否通过采用
-  # isClose: boolean;//     bit              default (0) not null, -- 投票是否截止
-  # isExecuted: boolean;//  bit              default (0) not null  -- 是否已执行完成
-  # time: number;//         bigint                       not null,
-  # modify: number;//       bigint                       not null,
-  # blockNumber: number;//  int                          not null
+  "Target Address[]"
+  target: [Bytes!]
+  "Data Bytes[]"
+  data: [Bytes!]
+  "Pass Rate"
+  passRate: BigInt
+  "Loop Count"
+  loopCount: BigInt
+  "Loop Time"
+  loopTime: BigInt
+  "Vote Total"
+  voteTotal: BigInt
+  "Agree Total"
+  agreeTotal: BigInt
+  "Execute Time"
+  executeTime: BigInt
+  "Is Agree"
+  isAgree: Boolean
+  "Is Close"
+  isClose: Boolean
+  "Is Executed"
+  isExecuted: Boolean
+  "Time"
+  time: BigInt
+  "Modify Time"
+  modifyTime: BigInt
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
 }
 
 enum LedgerType {

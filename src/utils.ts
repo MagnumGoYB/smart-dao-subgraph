@@ -1,11 +1,4 @@
-import {
-  Address,
-  Bytes,
-  BigInt,
-  log,
-  ByteArray,
-  ethereum
-} from '@graphprotocol/graph-ts'
+import { Address, Bytes, BigInt, log, ethereum } from '@graphprotocol/graph-ts'
 
 import {
   Account,
@@ -15,42 +8,13 @@ import {
   Proposal,
   VotePool
 } from '../generated/schema'
-import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
-import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
-import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
+import { fetchMemberValue, fetchVoteProposalValue } from './fetch-contracts'
+
+export * from './fetch-contracts'
 
 export const ZERO_BI = BigInt.fromI32(0)
 export const ONE_BI = BigInt.fromI32(1)
 export const ADDRESS_ZERO = Address.zero()
-
-export class DAOPrimaryInfo {
-  name: string
-  description: string
-  mission: string
-  image: string
-  extend: Bytes | null
-  memberAddress: Address
-  votePoolAddress: Address
-  operatorAddress: Address
-  ledgerAddress: Address
-}
-
-export class MemberInfo {
-  name: string | null
-  description: string | null
-  image: string | null
-  votes: BigInt
-}
-
-export class ProposalInfo {
-  isAnonymous: boolean
-  origin: Address
-  name: string | null
-  description: string | null
-  lifespan: BigInt | null
-  expiry: BigInt | null
-}
-
 export class CreateLedgerParam {
   from: Address | null
   balance: BigInt | null
@@ -120,67 +84,6 @@ export function getOrCreateMember(
   return member as Member
 }
 
-export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
-  const contract = DAOContract.bind(address)
-  const nameResult = contract.try_name()
-  const descriptionResult = contract.try_description()
-  const missionResult = contract.try_mission()
-  const imageResult = contract.try_image()
-  const extendResult = contract.try_extend()
-  const memberAddress = contract.try_member()
-  const votePoolAddress = contract.try_root()
-  const operatorAddress = contract.try_operator()
-  const ledgerAddress = contract.try_ledger()
-  return {
-    name: nameResult.reverted ? 'unknown' : nameResult.value,
-    description: descriptionResult.reverted
-      ? 'unknown'
-      : descriptionResult.value,
-    mission: missionResult.reverted ? 'unknown' : missionResult.value,
-    image: imageResult.reverted ? 'unknown' : imageResult.value,
-    extend: extendResult.reverted ? null : extendResult.value,
-    memberAddress: memberAddress.reverted ? ADDRESS_ZERO : memberAddress.value,
-    votePoolAddress: votePoolAddress.reverted
-      ? ADDRESS_ZERO
-      : votePoolAddress.value,
-    operatorAddress: operatorAddress.reverted
-      ? ADDRESS_ZERO
-      : operatorAddress.value,
-    ledgerAddress: ledgerAddress.reverted ? ADDRESS_ZERO : ledgerAddress.value
-  } as DAOPrimaryInfo
-}
-
-export function fetchMemberValue(
-  address: Address,
-  tokenId: BigInt
-): MemberInfo {
-  const contract = MemberContract.bind(address)
-  log.debug('Fetching Member ID {}', [tokenId.toString()])
-  log.debug('Fetching Member Info. Contract Address {} ID {}', [
-    address.toHex(),
-    tokenId.toString()
-  ])
-  const total = contract.total()
-  log.debug('Total Member {}', [total.toString()])
-  const infoResult = contract.try_getMemberInfo(tokenId)
-  log.debug('Member Info Result. Reverted {}', [infoResult.reverted.toString()])
-  if (infoResult.reverted) {
-    return {
-      name: null,
-      description: null,
-      image: null,
-      votes: ZERO_BI
-    } as MemberInfo
-  } else {
-    return {
-      name: infoResult.value.name,
-      description: infoResult.value.description,
-      image: infoResult.value.image,
-      votes: infoResult.value.votes
-    } as MemberInfo
-  }
-}
-
 export function setExecutor(memberAddress: Address, tokenId: BigInt): void {
   const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
   const member = Member.load(memberId)
@@ -207,7 +110,8 @@ export function setExecutor(memberAddress: Address, tokenId: BigInt): void {
 export function getOrCreateVotePoolProposal(
   id: BigInt,
   address: Address,
-  DAOAddress: Address
+  DAOAddress: Address,
+  block: ethereum.Block
 ): Proposal {
   const dao = getOrCreateDAO(DAOAddress)
   const votePoolId = DAOAddress.toHex().concat('-').concat(id.toHex())
@@ -240,68 +144,26 @@ export function getOrCreateVotePoolProposal(
   voteProposal.originAddress = info.origin
   voteProposal.lifespan = info.lifespan
   voteProposal.expiry = info.expiry
+  voteProposal.target = info.target.map<Bytes>((target: Bytes) => target)
+  voteProposal.data = info.data
+  voteProposal.passRate = info.passRate
+  voteProposal.loopCount = info.loopCount
+  voteProposal.loopTime = info.loopTime
+  voteProposal.voteTotal = info.voteTotal
+  voteProposal.agreeTotal = info.agreeTotal
+  voteProposal.executeTime = info.executeTime
+  voteProposal.isAgree = info.isAgree
+  voteProposal.isClose = info.isClose
+  voteProposal.isExecuted = info.isExecuted
+  voteProposal.time = block.timestamp
+  voteProposal.modifyTime = block.timestamp
+  voteProposal.blockId = block.hash.toHex()
+  voteProposal.blockNumber = block.number
+  voteProposal.blockTimestamp = block.timestamp
   voteProposal.save()
   log.info('Vote Proposal Created. ID {}', [proposalId])
 
   return voteProposal as Proposal
-}
-
-export function fetchVoteProposalValue(
-  id: BigInt,
-  address: Address,
-  DAOAddress: Address
-): ProposalInfo {
-  log.debug('Fetching Vote Proposal DAO Address {}', [DAOAddress.toHex()])
-  const contract = VotePoolContract.bind(address)
-  log.debug('Fetching Vote Proposal ID {}', [id.toHex()])
-  log.debug('Fetching Vote Proposal Info. Contract Address {} ID {}', [
-    address.toHex(),
-    id.toHex()
-  ])
-  const proposal = contract.try_getProposal(id)
-  log.debug('Vote Proposal Info Result. Reverted {}', [
-    proposal.reverted.toString()
-  ])
-  if (proposal.reverted) {
-    return {
-      isAnonymous: true,
-      origin: ADDRESS_ZERO,
-      name: null,
-      description: null,
-      lifespan: ZERO_BI,
-      expiry: ZERO_BI
-    } as ProposalInfo
-  } else {
-    const isAnonymous = proposal.value.originId === ZERO_BI
-    let origin: Address = ADDRESS_ZERO
-    if (!isAnonymous) {
-      const daoValues = fetchDAOBasicValue(DAOAddress)
-      const memberId = daoValues.memberAddress
-        .toHex()
-        .concat('-')
-        .concat(proposal.value.originId.toHex())
-      log.debug('Vote Proposal is Not Anonymous Member ID {}', [memberId])
-      const member = Member.load(memberId)
-      if (member !== null) {
-        log.debug('Vote Proposal Member Found Account ID {}', [member.account])
-        const account = Account.load(member.account)
-        if (account !== null) {
-          log.debug('Vote Proposal Account Found Address {}', [
-            account.address.toHex()
-          ])
-          origin = Address.fromBytes(account.address)
-        }
-      }
-    }
-    return {
-      isAnonymous,
-      origin: isAnonymous ? proposal.value.origin : origin,
-      name: proposal.value.name,
-      description: proposal.value.description,
-      lifespan: proposal.value.lifespan,
-      expiry: proposal.value.expiry
-    } as ProposalInfo
-  }
 }
 
 /**
