@@ -7,23 +7,9 @@ import {
   MemberInitializable,
   VotePoolInitializable
 } from './../generated/templates'
-import { DAOsFactory } from '../generated/schema'
-import { ONE_BI, ZERO_BI, fetchDAOBasicValue, getOrCreateDAO } from './utils'
-
-let FACTORY_ADDRESS = '0x4237E9a558Ff18Bac731ca8491573C97BbF2a60e'
+import { fetchDAOBasicValue, getOrCreateDAO } from './utils'
 
 export function handleCreated(event: CreatedEvent): void {
-  let factory = DAOsFactory.load(FACTORY_ADDRESS)
-  if (factory === null) {
-    factory = new DAOsFactory(FACTORY_ADDRESS)
-    factory.total = ZERO_BI
-    factory.save()
-
-    log.info('DAOs Factory initialized: {}', [factory.id])
-  }
-  factory.total = factory.total.plus(ONE_BI)
-  factory.save()
-
   DAOInitializable.create(event.params.dao)
   log.info('DAO Contract initialized: {}', [event.params.dao.toHex()])
 
@@ -31,7 +17,7 @@ export function handleCreated(event: CreatedEvent): void {
   context.setString('DAOAddress', event.params.dao.toHex())
 
   const dao = getOrCreateDAO(event.params.dao)
-  dao.creator = dao.id.concat('-').concat(event.transaction.from.toHex())
+  dao.accounts = []
   dao.blockId = event.block.hash.toHex()
   dao.blockNumber = event.block.number
   dao.blockTimestamp = event.block.timestamp
@@ -44,9 +30,9 @@ export function handleCreated(event: CreatedEvent): void {
     ])
   }
 
-  const memberAddress = daoBasicInfo.memberAddress
-  MemberInitializable.createWithContext(memberAddress, context)
-  log.info('Member Contract initialized: {}', [memberAddress.toHex()])
+  const memberInfoAddress = daoBasicInfo.memberAddress
+  MemberInitializable.createWithContext(memberInfoAddress, context)
+  log.info('Member Contract initialized: {}', [memberInfoAddress.toHex()])
 
   const votePoolAddress = daoBasicInfo.votePoolAddress
   VotePoolInitializable.createWithContext(votePoolAddress, context)

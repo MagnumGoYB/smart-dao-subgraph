@@ -1,7 +1,6 @@
-import { Address, BigInt, dataSource, log } from '@graphprotocol/graph-ts'
+import { BigInt, dataSource, log } from '@graphprotocol/graph-ts'
 
-import { ADDRESS_ZERO, getOrCreateDAO, getOrCreateLedger } from '../utils'
-import { Ledger } from '../../generated/schema'
+import { ADDRESS_ZERO, getOrCreateLedger } from '../utils'
 import { SetModule as SetModuleEvent } from './../../generated/templates/DAOInitializable/DAO'
 
 export function handleSetModule(event: SetModuleEvent): void {

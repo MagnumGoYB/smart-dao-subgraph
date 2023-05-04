@@ -5,6 +5,7 @@ import {
   DAO,
   Ledger,
   Member,
+  MemberInfo,
   Proposal,
   VotePool
 } from '../generated/schema'
@@ -29,82 +30,83 @@ export function getOrCreateDAO(address: Address): DAO {
   let dao = DAO.load(id)
   if (dao === null) {
     dao = new DAO(id)
+    dao.save()
   }
   return dao as DAO
 }
 
-export function getOrCreateAccount(
-  address: Address,
-  DAOAddress: Address,
-  memberAddress: Address,
-  tokenId: BigInt
-): Account {
+export function getOrCreateAccount(address: Address): Account {
   const id = address.toHex()
-  const accountId = DAOAddress.toHex().concat('-').concat(id)
-  log.debug('Account ID {}', [accountId])
-  let account = Account.load(accountId)
+  let account = Account.load(id)
   if (account === null) {
-    account = new Account(accountId)
-    account.address = address
+    account = new Account(id)
+    account.save()
+    log.info('New Account. ID {}', [id])
   }
-  log.debug('Get Member ID {}', [tokenId.toString()])
-  const info = fetchMemberValue(memberAddress, tokenId)
-  account.name = info.name
-  account.description = info.description
-  account.image = info.image
-  account.votes = info.votes
-  account.save()
   return account as Account
 }
 
 export function getOrCreateMember(
-  tokenId: BigInt,
-  memberAddress: Address,
   accountAddress: Address,
-  DAOAddress: Address
+  DAOAddress: Address,
+  memberTokenId: BigInt,
+  memberInfoAddress: Address
 ): Member {
-  const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
-  log.debug('Member ID {}', [memberId])
-  const dao = getOrCreateDAO(DAOAddress)
-  const account = getOrCreateAccount(
-    accountAddress,
-    DAOAddress,
-    memberAddress,
-    tokenId
-  )
-  log.debug('Member Account ID {}', [account.id])
-  let member = Member.load(memberId)
+  const memberInfoId = memberInfoAddress.toHex()
+  const memberValues = fetchMemberValue(memberInfoAddress, memberTokenId)
+  let memberInfo = MemberInfo.load(memberInfoId)
+  let dao = getOrCreateDAO(DAOAddress)
+  if (memberInfo === null) {
+    memberInfo = new MemberInfo(memberInfoId)
+    memberInfo.dao = DAOAddress.toHex()
+    memberInfo.name = memberValues.baseName
+    memberInfo.count = ZERO_BI
+    memberInfo.save()
+
+    dao.memberInfo = memberInfo.id
+    dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+    dao.save()
+  }
+
+  const account = getOrCreateAccount(accountAddress)
+  dao.accounts = dao.accounts.concat([account.id])
+  dao.save()
+
+  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  log.debug('Member ID {}', [id])
+  let member = Member.load(id)
   if (member === null) {
-    member = new Member(memberId)
-    member.dao = dao.id
+    member = new Member(id)
     member.account = account.id
-    member.address = memberAddress
+    member.tokenId = memberTokenId
+    member.description = memberValues.description
+    member.name = memberValues.name
+    member.image = memberValues.image
+    member.infoBy = memberInfo.id
+    member.votes = memberValues.votes
     member.save()
+
+    memberInfo.count = memberInfo.count.plus(ONE_BI)
+    memberInfo.save()
   }
   return member as Member
 }
 
-export function setExecutor(memberAddress: Address, tokenId: BigInt): void {
-  const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
-  const member = Member.load(memberId)
+export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
+  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  const member = Member.load(id)
   if (member === null) {
-    log.warning('DAO Set Executor. Member {} not found', [memberId])
+    log.warning('DAO Set Executor. Member {} not found', [id])
     return
   }
-  let dao = DAO.load(member.dao)
+  let dao = DAO.load(DAOAddress.toHex())
   if (dao === null) {
-    log.warning('DAO Set Executor. DAO {} not found', [member.dao])
+    log.warning('DAO Set Executor. DAO {} not found', [DAOAddress.toHex()])
     return
   }
-  const account = Account.load(member.account)
-  if (account === null) {
-    log.warning('DAO Set Executor. Account {} not found', [member.account])
-    return
-  }
-  dao.executor = member.account
+  dao.executor = member.id
   dao.save()
-
-  log.info('DAO Update Executor Success. Account {}', [account.id])
+  log.info('DAO Update Executor Success. Member {}', [member.id])
 }
 
 export function getOrCreateVotePoolProposal(

@@ -6,12 +6,12 @@ import {
   getOrCreateMember,
   setExecutor
 } from './../utils'
-import { Account, Member } from '../../generated/schema'
 import {
   Change as ChangeEvent,
   Transfer as TransferEvent,
   Update as UpdateEvent
 } from './../../generated/templates/MemberInitializable/Member'
+import { Member } from '../../generated/schema'
 
 const context = dataSource.context()
 const DAOAddress = context.getString('DAOAddress')
@@ -28,46 +28,38 @@ export function handleTransfer(event: TransferEvent): void {
     ADDRESS_ZERO.equals(event.params.from) &&
     !ADDRESS_ZERO.equals(event.params.to)
   ) {
-    const memberAddress = dataSource.address()
-    const tokenId = event.params.tokenId
-    const userAddress = event.params.to
     const member = getOrCreateMember(
-      tokenId,
-      memberAddress,
-      userAddress,
-      Address.fromString(DAOAddress)
+      event.params.to,
+      Address.fromString(DAOAddress),
+      event.params.tokenId,
+      dataSource.address()
     )
 
-    log.info('DAO Member Created. Member {}, Account {}, DAO {}', [
+    log.info('DAO Member Created. Member ID {}, Account ID {}', [
       member.id,
-      member.account,
-      member.dao
+      member.account
     ])
   }
 }
 
 export function handleUpdate(event: UpdateEvent): void {
-  const memberAddress = dataSource.address()
   const tokenId = event.params.id
-  const memberId = memberAddress.toHex().concat('-').concat(tokenId.toHex())
-  const member = Member.load(memberId)
+  const id = Address.fromString(DAOAddress)
+    .toHex()
+    .concat('-')
+    .concat(tokenId.toHex())
+  let member = Member.load(id)
   if (member === null) {
-    log.warning('DAO Member Update. Member {} not found', [memberId])
+    log.warning('DAO Member Update. ID {} Not Found', [id])
     return
   }
-  let account = Account.load(member.account)
-  if (account === null) {
-    log.warning('DAO Member Update. Account {} not found', [member.account])
-    return
-  }
-  const info = fetchMemberValue(memberAddress, tokenId)
-  account.name = info.name
-  account.description = info.description
-  account.image = info.image
-  account.votes = info.votes
-  account.save()
-
-  log.info('Account Update. User {}', [account.id])
+  const info = fetchMemberValue(dataSource.address(), tokenId)
+  member.name = info.name
+  member.description = info.description
+  member.image = info.image
+  member.votes = info.votes
+  member.save()
+  log.info('Member Update. ID {}', [member.id])
 }
 
 export function handleChange(event: ChangeEvent): void {

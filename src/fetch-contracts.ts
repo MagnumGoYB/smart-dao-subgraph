@@ -19,9 +19,10 @@ export class DAOPrimaryInfo {
 }
 
 export class MemberInfo {
-  name: string | null
-  description: string | null
-  image: string | null
+  baseName: string
+  name: string
+  description: string
+  image: string
   votes: BigInt
 }
 
@@ -94,25 +95,17 @@ export function fetchMemberValue(
     address.toHex(),
     tokenId.toString()
   ])
+  const baseName = contract.name()
   const total = contract.total()
   log.debug('Total Member {}', [total.toString()])
-  const infoResult = contract.try_getMemberInfo(tokenId)
-  log.debug('Member Info Result. Reverted {}', [infoResult.reverted.toString()])
-  if (infoResult.reverted) {
-    return {
-      name: null,
-      description: null,
-      image: null,
-      votes: ZERO_BI
-    } as MemberInfo
-  } else {
-    return {
-      name: infoResult.value.name,
-      description: infoResult.value.description,
-      image: infoResult.value.image,
-      votes: infoResult.value.votes
-    } as MemberInfo
-  }
+  const info = contract.getMemberInfo(tokenId)
+  return {
+    baseName,
+    name: info.name,
+    description: info.description,
+    image: info.image,
+    votes: info.votes
+  } as MemberInfo
 }
 
 export function fetchVoteProposalValue(
@@ -164,13 +157,7 @@ export function fetchVoteProposalValue(
       const member = Member.load(memberId)
       if (member !== null) {
         log.debug('Vote Proposal Member Found Account ID {}', [member.account])
-        const account = Account.load(member.account)
-        if (account !== null) {
-          log.debug('Vote Proposal Account Found Address {}', [
-            account.address.toHex()
-          ])
-          origin = Address.fromBytes(account.address)
-        }
+        origin = Address.fromString(member.id)
       }
     }
     return {

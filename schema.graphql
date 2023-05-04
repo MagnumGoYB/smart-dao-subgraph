@@ -1,27 +1,14 @@
-# DAOs Factory
-type DAOsFactory @entity {
-  "ID (hash)"
-  id: ID!
-  "Total of DAOs"
-  total: BigInt!
-}
-
 """
 DAO
 """
 type DAO @entity {
   "ID (hash)"
+  # Contract Address
   id: ID!
   "Creator"
-  creator: Account
+  creator: Member
   "Executor"
-  executor: Account
-  "Block ID (hash)"
-  blockId: ID!
-  "Block Number"
-  blockNumber: BigInt!
-  "Block Timestamp"
-  blockTimestamp: BigInt!
+  executor: Member
   "Name"
   name: String
   "Mission"
@@ -32,23 +19,50 @@ type DAO @entity {
   image: String
   "Extend Data"
   extend: Bytes
-  "Members"
-  members: [Member!] @derivedFrom(field: "dao")
+  "Member Info"
+  memberInfo: MemberInfo
   "votePool"
   votePool: VotePool
   "Ledger Address"
   ledgerAddress: Bytes
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
+  "Accounts"
+  accounts: [Account!]!
 }
 
 """
-Account
+Member Info
 """
-type Account @entity {
+type MemberInfo @entity {
   "ID (hash)"
-  # (DAO ID).concat('-').concat(address)
+  # Contract Address
   id: ID!
-  "Address"
-  address: Bytes!
+  "Belong DAO"
+  dao: DAO!
+  "Members"
+  members: [Member!] @derivedFrom(field: "infoBy")
+  "Name"
+  name: String
+  "Member Count"
+  count: BigInt!
+}
+
+"""
+Member
+"""
+type Member @entity {
+  "ID (hash)"
+  # (DAO Address).concat('-').concat(tokenId)
+  id: ID!
+  "721 Token ID"
+  tokenId: BigInt!
+  "Account"
+  account: Account!
   "Name"
   name: String
   "Description"
@@ -57,24 +71,19 @@ type Account @entity {
   image: String
   "Vote Power"
   votes: BigInt
-  "Joined DAOs"
-  daos: [Member!] @derivedFrom(field: "account")
+  "Info By"
+  infoBy: MemberInfo!
 }
 
 """
-Many to many Member
+Account
 """
-type Member @entity {
+type Account @entity {
   "ID (hash)"
-  # ERC-721 Token ID
-  # address.concat('-').concat(ERC-721 Token ID)
+  # Wallet Address
   id: ID!
-  "Address"
-  address: Bytes!
-  "Account"
-  account: Account!
-  "Joined DAO"
-  dao: DAO!
+  "Belong DAOs"
+  daos: [DAO!]! @derivedFrom(field: "accounts")
 }
 
 """
@@ -104,7 +113,7 @@ type Proposal @entity {
   isAnonymous: Boolean!
   "Origin Member"
   # Is Anonymous, is Null
-  origin: Account
+  origin: Member
   "Origin Address"
   originAddress: Bytes!
   "Name"
