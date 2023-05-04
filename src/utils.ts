@@ -30,7 +30,6 @@ export function getOrCreateDAO(address: Address): DAO {
   let dao = DAO.load(id)
   if (dao === null) {
     dao = new DAO(id)
-    dao.save()
   }
   return dao as DAO
 }
@@ -96,17 +95,17 @@ export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
   const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
   const member = Member.load(id)
   if (member === null) {
-    log.warning('DAO Set Executor. Member {} not found', [id])
+    log.warning('DAO Set Executor. Member ID {} Not Found', [id])
     return
   }
   let dao = DAO.load(DAOAddress.toHex())
   if (dao === null) {
-    log.warning('DAO Set Executor. DAO {} not found', [DAOAddress.toHex()])
+    log.warning('DAO Set Executor. DAO ID {} Not Found', [DAOAddress.toHex()])
     return
   }
   dao.executor = member.id
   dao.save()
-  log.info('DAO Update Executor Success. Member {}', [member.id])
+  log.info('DAO Update Executor Success. Member ID {}', [member.id])
 }
 
 export function getOrCreateVotePoolProposal(

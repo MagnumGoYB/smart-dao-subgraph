@@ -69,6 +69,6 @@ export function handleChange(event: ChangeEvent): void {
   ])
 
   if (event.params.tag.equals(BigInt.fromI32(8))) {
-    setExecutor(dataSource.address(), event.params.value)
+    setExecutor(Address.fromString(DAOAddress), event.params.value)
   }
 }
