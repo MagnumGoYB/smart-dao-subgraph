@@ -28,7 +28,8 @@ export class MemberInfo {
 
 export class ProposalInfo {
   isAnonymous: boolean
-  origin: Address
+  origin: string | null
+  originAddress: Address
   name: string | null
   description: string | null
   lifespan: BigInt | null
@@ -120,64 +121,30 @@ export function fetchVoteProposalValue(
     address.toHex(),
     id.toHex()
   ])
-  const proposal = contract.try_getProposal(id)
-  log.debug('Vote Proposal Info Result. Reverted {}', [
-    proposal.reverted.toString()
-  ])
-  if (proposal.reverted) {
-    return {
-      isAnonymous: true,
-      origin: ADDRESS_ZERO,
-      name: null,
-      description: null,
-      lifespan: ZERO_BI,
-      expiry: ZERO_BI,
-      target: [],
-      data: [],
-      passRate: null,
-      loopCount: null,
-      loopTime: null,
-      voteTotal: ZERO_BI,
-      agreeTotal: ZERO_BI,
-      executeTime: null,
-      isAgree: false,
-      isClose: false,
-      isExecuted: false
-    } as ProposalInfo
-  } else {
-    const isAnonymous = proposal.value.originId === ZERO_BI
-    let origin: Address = ADDRESS_ZERO
-    if (!isAnonymous) {
-      const daoValues = fetchDAOBasicValue(DAOAddress)
-      const memberId = daoValues.memberAddress
-        .toHex()
-        .concat('-')
-        .concat(proposal.value.originId.toHex())
-      log.debug('Vote Proposal is Not Anonymous Member ID {}', [memberId])
-      const member = Member.load(memberId)
-      if (member !== null) {
-        log.debug('Vote Proposal Member Found Account ID {}', [member.account])
-        origin = Address.fromString(member.id)
-      }
-    }
-    return {
-      isAnonymous,
-      origin: isAnonymous ? proposal.value.origin : origin,
-      name: proposal.value.name,
-      description: proposal.value.description,
-      lifespan: proposal.value.lifespan,
-      expiry: proposal.value.expiry,
-      target: proposal.value.target,
-      data: proposal.value.data,
-      passRate: proposal.value.passRate,
-      loopCount: proposal.value.loopCount,
-      loopTime: proposal.value.loopTime,
-      voteTotal: proposal.value.voteTotal,
-      agreeTotal: proposal.value.agreeTotal,
-      executeTime: proposal.value.executeTime,
-      isAgree: proposal.value.isAgree,
-      isClose: proposal.value.isClose,
-      isExecuted: proposal.value.isExecuted
-    } as ProposalInfo
-  }
+  const proposal = contract.getProposal(id)
+  const isAnonymous = proposal.originId == ZERO_BI
+  log.debug('Fetching Vote Proposal Is Anonymous {}', [isAnonymous.toString()])
+  log.debug('Fetching Vote Proposal Origin ID {}', [proposal.originId.toHex()])
+  return {
+    isAnonymous,
+    origin: isAnonymous
+      ? proposal.origin.toHex()
+      : DAOAddress.toHex().concat('-').concat(proposal.originId.toHex()),
+    originAddress: proposal.origin,
+    name: proposal.name,
+    description: proposal.description,
+    lifespan: proposal.lifespan,
+    expiry: proposal.expiry,
+    target: proposal.target,
+    data: proposal.data,
+    passRate: proposal.passRate,
+    loopCount: proposal.loopCount,
+    loopTime: proposal.loopTime,
+    voteTotal: proposal.voteTotal,
+    agreeTotal: proposal.agreeTotal,
+    executeTime: proposal.executeTime,
+    isAgree: proposal.isAgree,
+    isClose: proposal.isClose,
+    isExecuted: proposal.isExecuted
+  } as ProposalInfo
 }

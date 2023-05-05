@@ -91,14 +91,14 @@ Vote Pool
 """
 type VotePool @entity {
   "ID (hash)"
-  # dao.concat('-').concat(address)
+  # Contract Address
   id: ID!
-  "Address"
-  address: Bytes!
   "Belong DAO"
   dao: DAO!
   "Proposals"
   proposals: [Proposal!] @derivedFrom(field: "votePool")
+  "Proposals Count"
+  count: BigInt!
 }
 
 """
@@ -172,6 +172,9 @@ enum State {
   Disable
 }
 
+"""
+Ledger
+"""
 type Ledger @entity {
   "ID (hash)"
   # address.concat('-').concat(txHash)

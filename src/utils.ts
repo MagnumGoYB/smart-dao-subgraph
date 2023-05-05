@@ -115,15 +115,16 @@ export function getOrCreateVotePoolProposal(
   block: ethereum.Block
 ): Proposal {
   const dao = getOrCreateDAO(DAOAddress)
-  const votePoolId = DAOAddress.toHex().concat('-').concat(id.toHex())
+  const votePoolId = address.toHex()
   log.debug('Create Vote Pool ID {}', [votePoolId])
 
   let votePool = VotePool.load(votePoolId)
   if (votePool === null) {
     votePool = new VotePool(votePoolId)
     votePool.dao = dao.id
-    votePool.address = address
+    votePool.count = ZERO_BI
     votePool.save()
+
     dao.votePool = votePool.id
     dao.save()
     log.info('Vote Pool Created. ID {}', [votePoolId])
@@ -133,36 +134,41 @@ export function getOrCreateVotePoolProposal(
   let voteProposal = Proposal.load(proposalId)
   if (voteProposal === null) {
     voteProposal = new Proposal(proposalId)
+    voteProposal.votePool = votePool.id
+    const info = fetchVoteProposalValue(id, address, DAOAddress)
+    voteProposal.name = info.name
+    voteProposal.description = info.description
+    voteProposal.isAnonymous = info.isAnonymous
+    if (info.isAnonymous) {
+      voteProposal.origin = null
+    } else {
+      voteProposal.origin = info.origin
+    }
+    voteProposal.originAddress = info.originAddress
+    voteProposal.lifespan = info.lifespan
+    voteProposal.expiry = info.expiry
+    voteProposal.target = info.target.map<Bytes>((target: Bytes) => target)
+    voteProposal.data = info.data
+    voteProposal.passRate = info.passRate
+    voteProposal.loopCount = info.loopCount
+    voteProposal.loopTime = info.loopTime
+    voteProposal.voteTotal = info.voteTotal
+    voteProposal.agreeTotal = info.agreeTotal
+    voteProposal.executeTime = info.executeTime
+    voteProposal.isAgree = info.isAgree
+    voteProposal.isClose = info.isClose
+    voteProposal.isExecuted = info.isExecuted
+    voteProposal.time = block.timestamp
+    voteProposal.modifyTime = block.timestamp
+    voteProposal.blockId = block.hash.toHex()
+    voteProposal.blockNumber = block.number
+    voteProposal.blockTimestamp = block.timestamp
+    voteProposal.save()
+    log.info('Vote Proposal Created. ID {}', [proposalId])
+
+    votePool.count = votePool.count.plus(ONE_BI)
+    votePool.save()
   }
-  voteProposal.votePool = votePool.id
-  const info = fetchVoteProposalValue(id, address, DAOAddress)
-  voteProposal.name = info.name
-  voteProposal.description = info.description
-  info.isAnonymous
-    ? (voteProposal.origin = null)
-    : (voteProposal.origin = dao.id.concat('-').concat(info.origin.toHex()))
-  voteProposal.isAnonymous = info.isAnonymous
-  voteProposal.originAddress = info.origin
-  voteProposal.lifespan = info.lifespan
-  voteProposal.expiry = info.expiry
-  voteProposal.target = info.target.map<Bytes>((target: Bytes) => target)
-  voteProposal.data = info.data
-  voteProposal.passRate = info.passRate
-  voteProposal.loopCount = info.loopCount
-  voteProposal.loopTime = info.loopTime
-  voteProposal.voteTotal = info.voteTotal
-  voteProposal.agreeTotal = info.agreeTotal
-  voteProposal.executeTime = info.executeTime
-  voteProposal.isAgree = info.isAgree
-  voteProposal.isClose = info.isClose
-  voteProposal.isExecuted = info.isExecuted
-  voteProposal.time = block.timestamp
-  voteProposal.modifyTime = block.timestamp
-  voteProposal.blockId = block.hash.toHex()
-  voteProposal.blockNumber = block.number
-  voteProposal.blockTimestamp = block.timestamp
-  voteProposal.save()
-  log.info('Vote Proposal Created. ID {}', [proposalId])
 
   return voteProposal as Proposal
 }
