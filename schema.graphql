@@ -1,9 +1,24 @@
 """
+Statistic
+"""
+type Statistic @entity {
+  "ID (hash)"
+  id: ID!
+  "Total DAOs"
+  totalDAOs: BigInt!
+  "Total Members"
+  totalMembers: BigInt!
+  "Total Accounts"
+  totalAccounts: BigInt!
+  "Total Proposals"
+  totalProposals: BigInt!
+}
+
+"""
 DAO
 """
 type DAO @entity {
-  "ID (hash)"
-  # Contract Address
+  "ID (hash) - Contract Address"
   id: ID!
   "Creator"
   creator: Member
@@ -21,10 +36,12 @@ type DAO @entity {
   extend: Bytes
   "Member Info"
   memberInfo: MemberInfo
-  "votePool"
+  "vote Pool"
   votePool: VotePool
-  "Ledger Address"
-  ledgerAddress: Bytes
+  "Ledger Pool"
+  ledgerPool: LedgerPool
+  "Asset Pool"
+  assetPool: AssetPool
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -39,8 +56,7 @@ type DAO @entity {
 Member Info
 """
 type MemberInfo @entity {
-  "ID (hash)"
-  # Contract Address
+  "ID (hash) - Contract Address"
   id: ID!
   "Belong DAO"
   dao: DAO!
@@ -56,8 +72,7 @@ type MemberInfo @entity {
 Member
 """
 type Member @entity {
-  "ID (hash)"
-  # (DAO Address).concat('-').concat(tokenId)
+  "ID (hash) - (DAO Address).concat('-').concat(tokenId)"
   id: ID!
   "721 Token ID"
   tokenId: BigInt!
@@ -79,8 +94,7 @@ type Member @entity {
 Account
 """
 type Account @entity {
-  "ID (hash)"
-  # Wallet Address
+  "ID (hash) - Wallet Address"
   id: ID!
   "Belong DAOs"
   daos: [DAO!]! @derivedFrom(field: "accounts")
@@ -90,8 +104,7 @@ type Account @entity {
 Vote Pool
 """
 type VotePool @entity {
-  "ID (hash)"
-  # Contract Address
+  "ID (hash) - Contract Address"
   id: ID!
   "Belong DAO"
   dao: DAO!
@@ -111,8 +124,7 @@ type Proposal @entity {
   votePool: VotePool!
   "is Anonymous"
   isAnonymous: Boolean!
-  "Origin Member"
-  # Is Anonymous, is Null
+  "Origin Member - Is Anonymous, is Null"
   origin: Member
   "Origin Address"
   originAddress: Bytes!
@@ -158,6 +170,20 @@ type Proposal @entity {
   blockTimestamp: BigInt!
 }
 
+"""
+Ledger Pool
+"""
+type LedgerPool @entity {
+  "ID (hash) - Contract Address"
+  id: ID!
+  "Belong DAO"
+  dao: DAO!
+  "Ledgers"
+  ledgers: [Ledger!] @derivedFrom(field: "ledgerPool")
+  "Ledgers Count"
+  count: BigInt!
+}
+
 enum LedgerType {
   Reserved
   Receive
@@ -176,11 +202,12 @@ enum State {
 Ledger
 """
 type Ledger @entity {
-  "ID (hash)"
-  # address.concat('-').concat(txHash)
+  "ID (hash) - address.concat('-').concat(txHash)"
   id: ID!
   "Address"
   address: Bytes!
+  "Belong Ledger Pool"
+  ledgerPool: LedgerPool!
   "Tx Hash"
   txHash: Bytes!
   "DAO Host"
@@ -207,4 +234,72 @@ type Ledger @entity {
   state: State!
   # assetIncome_id: number;
   # assetIncome?: LedgerAssetIncome;
+}
+
+"""
+Asset Pool
+"""
+type AssetPool @entity {
+  "ID (hash) - Contract Address"
+  id: ID!
+  "Belong DAO"
+  dao: DAO!
+  "Assets"
+  assets: [Asset!] @derivedFrom(field: "assetPool")
+  "Assets Count"
+  count: BigInt!
+}
+
+# Asset {
+#   id: number;
+#   host: string; // dao address
+#   token: string; // 合约地址
+#   tokenId: string; // id
+#   uri: string; // tokenURI
+#   owner: string; // 属主
+#   author: string; // 作者地址
+#   selling: Selling; // 最后上架销售类型: 0未销售,1销售opensea,2其它平台
+#   sellPrice: string; // 最后上架销售价格
+#   minimumPrice: string; // 最小销售价格
+#   state: State; // 状态: 0正常,1删除
+#   time: number; // 数据入库时间
+#   modify: number; // 修改时间（非链上数据修改）
+#   name: string; //                   varchar (256)  default ('') not null,  -- 名称
+#   imageOriign: string; //            varchar (512)  default ('') not null,  -- origin image uri
+#   mediaOrigin: string; //            varchar (512)  default ('') not null,  -- origin media uri
+#   description: string; //            varchar (2048) default ('') not null,  -- 详细信息
+#   externalLink: string; //           varchar (512)  default ('') not null,  -- 外部链接
+#   properties: any | null; //         json                            null,  -- 附加信息
+#   blockNumber: number; //            int            default (0)  not null,  -- 创建区块号
+#   backgroundColor: string; //        varchar (32)   default ('') not null,  -- 背景
+#   categorie: number; //              int            default (0)  not null,  -- 类别
+#   retry: number; //                  int            default (0)  not null   -- 抓取数据重试次数, sync uri data retry count
+#   retryTime: number; //              bigint         default (0)  not null,  -- 抓取数据最后重试时间
+#   totalSupply: string; //            varchar (66)                not null    -- total supply
+#   assetType: AssetType; //          int                         not null   -- asset type, 721/1155
+# }
+"""
+Asset
+"""
+type Asset @entity {
+  "ID (hash) - (DAO Address).concat('-').concat(tokenId)"
+  id: ID!
+  "ERC-1155 Token ID"
+  tokenId: BigInt!
+  "Belong Asset Pool"
+  assetPool: AssetPool!
+  "Address"
+  address: Bytes!
+  "Token URI"
+  uri: String
+  "Name"
+  name: String
+  "Description"
+  description: String
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
 }

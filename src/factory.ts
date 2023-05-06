@@ -1,13 +1,22 @@
 import { DataSourceContext, log } from '@graphprotocol/graph-ts'
 
-import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
 import {
+  ADDRESS_ZERO,
+  fetchDAOBasicValue,
+  getOrCreateAssetPool,
+  getOrCreateDAO,
+  getOrCreateLedgerPool,
+  getOrCreateMemberInfo,
+  getOrCreateVotePool
+} from './utils'
+import {
+  AssetInitializable,
   DAOInitializable,
   LedgerInitializable,
   MemberInitializable,
   VotePoolInitializable
 } from './../generated/templates'
-import { fetchDAOBasicValue, getOrCreateDAO } from './utils'
+import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
 
 export function handleCreated(event: CreatedEvent): void {
   DAOInitializable.create(event.params.dao)
@@ -28,20 +37,46 @@ export function handleCreated(event: CreatedEvent): void {
     log.info('Ledger Contract initialized: {}', [
       daoBasicInfo.ledgerAddress.toHex()
     ])
+
+    dao.ledgerPool = getOrCreateLedgerPool(
+      daoBasicInfo.ledgerAddress,
+      event.params.dao
+    ).id
   }
 
-  const memberInfoAddress = daoBasicInfo.memberAddress
-  MemberInitializable.createWithContext(memberInfoAddress, context)
-  log.info('Member Contract initialized: {}', [memberInfoAddress.toHex()])
+  MemberInitializable.createWithContext(daoBasicInfo.memberAddress, context)
+  log.info('Member Contract initialized: {}', [
+    daoBasicInfo.memberAddress.toHex()
+  ])
 
-  const votePoolAddress = daoBasicInfo.votePoolAddress
-  VotePoolInitializable.createWithContext(votePoolAddress, context)
-  log.info('VotePool Contract initialized: {}', [votePoolAddress.toHex()])
+  VotePoolInitializable.createWithContext(daoBasicInfo.votePoolAddress, context)
+  log.info('VotePool Contract initialized: {}', [
+    daoBasicInfo.votePoolAddress.toHex()
+  ])
+
+  if (daoBasicInfo.assetAddress) {
+    AssetInitializable.createWithContext(daoBasicInfo.assetAddress, context)
+    log.info('Asset Contract initialized: {}', [
+      daoBasicInfo.assetAddress.toHex()
+    ])
+    dao.assetPool = getOrCreateAssetPool(
+      daoBasicInfo.ledgerAddress,
+      event.params.dao
+    ).id
+  }
 
   dao.name = daoBasicInfo.name
   dao.description = daoBasicInfo.description
   dao.mission = daoBasicInfo.mission
   dao.extend = daoBasicInfo.extend
   dao.image = daoBasicInfo.image
+  dao.votePool = getOrCreateVotePool(
+    daoBasicInfo.votePoolAddress,
+    event.params.dao
+  ).id
+  dao.memberInfo = getOrCreateMemberInfo(
+    daoBasicInfo.memberAddress,
+    event.params.dao
+  ).id
   dao.save()
 }

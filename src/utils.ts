@@ -2,11 +2,14 @@ import { Address, Bytes, BigInt, log, ethereum } from '@graphprotocol/graph-ts'
 
 import {
   Account,
+  AssetPool,
   DAO,
   Ledger,
+  LedgerPool,
   Member,
   MemberInfo,
   Proposal,
+  Statistic,
   VotePool
 } from '../generated/schema'
 import { fetchMemberValue, fetchVoteProposalValue } from './fetch-contracts'
@@ -25,11 +28,28 @@ export class CreateLedgerParam {
   member: BigInt | null
 }
 
+export function getOrCreateStatistic(): Statistic {
+  const id = ADDRESS_ZERO.toHex()
+  let statistic = Statistic.load(id)
+  if (statistic === null) {
+    statistic = new Statistic(id)
+    statistic.totalDAOs = ZERO_BI
+    statistic.totalMembers = ZERO_BI
+    statistic.totalAccounts = ZERO_BI
+    statistic.totalProposals = ZERO_BI
+  }
+  return statistic as Statistic
+}
+
 export function getOrCreateDAO(address: Address): DAO {
   const id = address.toHex()
   let dao = DAO.load(id)
   if (dao === null) {
     dao = new DAO(id)
+
+    const statistic = getOrCreateStatistic()
+    statistic.totalDAOs = statistic.totalDAOs.plus(ONE_BI)
+    statistic.save()
   }
   return dao as DAO
 }
@@ -41,8 +61,28 @@ export function getOrCreateAccount(address: Address): Account {
     account = new Account(id)
     account.save()
     log.info('New Account. ID {}', [id])
+
+    const statistic = getOrCreateStatistic()
+    statistic.totalAccounts = statistic.totalAccounts.plus(ONE_BI)
+    statistic.save()
   }
   return account as Account
+}
+
+export function getOrCreateMemberInfo(
+  memberInfoAddress: Address,
+  DAOAddress: Address
+): MemberInfo {
+  const id = memberInfoAddress.toHex()
+  let memberInfo = MemberInfo.load(id)
+  if (memberInfo === null) {
+    memberInfo = new MemberInfo(id)
+    memberInfo.dao = DAOAddress.toHex()
+    memberInfo.count = ZERO_BI
+    memberInfo.save()
+  }
+
+  return memberInfo as MemberInfo
 }
 
 export function getOrCreateMember(
@@ -51,21 +91,16 @@ export function getOrCreateMember(
   memberTokenId: BigInt,
   memberInfoAddress: Address
 ): Member {
-  const memberInfoId = memberInfoAddress.toHex()
   const memberValues = fetchMemberValue(memberInfoAddress, memberTokenId)
-  let memberInfo = MemberInfo.load(memberInfoId)
-  let dao = getOrCreateDAO(DAOAddress)
-  if (memberInfo === null) {
-    memberInfo = new MemberInfo(memberInfoId)
-    memberInfo.dao = DAOAddress.toHex()
-    memberInfo.name = memberValues.baseName
-    memberInfo.count = ZERO_BI
-    memberInfo.save()
 
-    dao.memberInfo = memberInfo.id
-    dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
-    dao.save()
-  }
+  let memberInfo = getOrCreateMemberInfo(memberInfoAddress, DAOAddress)
+  memberInfo.name = memberValues.baseName
+  memberInfo.save()
+
+  let dao = getOrCreateDAO(DAOAddress)
+  dao.memberInfo = memberInfo.id
+  dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  dao.save()
 
   const account = getOrCreateAccount(accountAddress)
   dao.accounts = dao.accounts.concat([account.id])
@@ -87,6 +122,10 @@ export function getOrCreateMember(
 
     memberInfo.count = memberInfo.count.plus(ONE_BI)
     memberInfo.save()
+
+    const statistic = getOrCreateStatistic()
+    statistic.totalMembers = statistic.totalMembers.plus(ONE_BI)
+    statistic.save()
   }
   return member as Member
 }
@@ -108,6 +147,54 @@ export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
   log.info('DAO Update Executor Success. Member ID {}', [member.id])
 }
 
+export function getOrCreateVotePool(
+  address: Address,
+  DAOAddress: Address
+): VotePool {
+  const id = address.toHex()
+  let votePool = VotePool.load(id)
+  if (votePool === null) {
+    votePool = new VotePool(id)
+    votePool.dao = DAOAddress.toHex()
+    votePool.count = ZERO_BI
+    votePool.save()
+    log.info('Vote Pool Created. ID {}', [id])
+  }
+  return votePool as VotePool
+}
+
+export function getOrCreateLedgerPool(
+  address: Address,
+  DAOAddress: Address
+): LedgerPool {
+  const id = address.toHex()
+  let ledgerPool = LedgerPool.load(id)
+  if (ledgerPool === null) {
+    ledgerPool = new LedgerPool(id)
+    ledgerPool.dao = DAOAddress.toHex()
+    ledgerPool.count = ZERO_BI
+    ledgerPool.save()
+    log.info('Ledger Pool Created. ID {}', [id])
+  }
+  return ledgerPool as LedgerPool
+}
+
+export function getOrCreateAssetPool(
+  address: Address,
+  DAOAddress: Address
+): AssetPool {
+  const id = address.toHex()
+  let assetPool = AssetPool.load(id)
+  if (assetPool === null) {
+    assetPool = new AssetPool(id)
+    assetPool.dao = DAOAddress.toHex()
+    assetPool.count = ZERO_BI
+    assetPool.save()
+    log.info('Asset Pool Created. ID {}', [id])
+  }
+  return assetPool as AssetPool
+}
+
 export function getOrCreateVotePoolProposal(
   id: BigInt,
   address: Address,
@@ -115,20 +202,9 @@ export function getOrCreateVotePoolProposal(
   block: ethereum.Block
 ): Proposal {
   const dao = getOrCreateDAO(DAOAddress)
-  const votePoolId = address.toHex()
-  log.debug('Create Vote Pool ID {}', [votePoolId])
-
-  let votePool = VotePool.load(votePoolId)
-  if (votePool === null) {
-    votePool = new VotePool(votePoolId)
-    votePool.dao = dao.id
-    votePool.count = ZERO_BI
-    votePool.save()
-
-    dao.votePool = votePool.id
-    dao.save()
-    log.info('Vote Pool Created. ID {}', [votePoolId])
-  }
+  const votePool = getOrCreateVotePool(address, DAOAddress)
+  dao.votePool = votePool.id
+  dao.save()
 
   const proposalId = id.toHex()
   let voteProposal = Proposal.load(proposalId)
@@ -168,6 +244,10 @@ export function getOrCreateVotePoolProposal(
 
     votePool.count = votePool.count.plus(ONE_BI)
     votePool.save()
+
+    const statistic = getOrCreateStatistic()
+    statistic.totalProposals = statistic.totalProposals.plus(ONE_BI)
+    statistic.save()
   }
 
   return voteProposal as Proposal
@@ -191,11 +271,16 @@ export function getOrCreateLedger(
   block: ethereum.Block,
   params: CreateLedgerParam
 ): Ledger {
-  const ledgerId = address.toHex().concat('-').concat(txHash.toHex()) // address.concat('-').concat(txHash)
+  const id = address.toHex().concat('-').concat(txHash.toHex()) // address.concat('-').concat(txHash)
   const dao = getOrCreateDAO(DAOAddress)
-  let ledger = Ledger.load(ledgerId)
+
+  const ledgerPool = getOrCreateLedgerPool(address, DAOAddress)
+  dao.ledgerPool = ledgerPool.id
+  dao.save()
+
+  let ledger = Ledger.load(id)
   if (ledger === null) {
-    ledger = new Ledger(ledgerId)
+    ledger = new Ledger(id)
     ledger.dao = dao.id
     ledger.address = address
     ledger.txHash = txHash
@@ -242,7 +327,10 @@ export function getOrCreateLedger(
     }
     ledger.state = 'Enable' // default state is "Enable"
     ledger.save()
-    log.info('New Ledger ID {}, Type {}', [ledgerId, type.toHex()])
+    log.info('New Ledger ID {}, Type {}', [id, type.toHex()])
+
+    ledgerPool.count = ledgerPool.count.plus(ONE_BI)
+    ledgerPool.save()
   }
   return ledger as Ledger
 }

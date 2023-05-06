@@ -1,7 +1,7 @@
 import { Address, Bytes, log, BigInt } from '@graphprotocol/graph-ts'
 
 import { ADDRESS_ZERO, ZERO_BI } from './utils'
-import { Account, Member } from '../generated/schema'
+import { Asset as AssetContract } from '../generated/templates/AssetInitializable/Asset'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
 import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
@@ -16,6 +16,7 @@ export class DAOPrimaryInfo {
   votePoolAddress: Address
   operatorAddress: Address
   ledgerAddress: Address
+  assetAddress: Address
 }
 
 export class MemberInfo {
@@ -67,6 +68,7 @@ export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
   const votePoolAddress = contract.try_root()
   const operatorAddress = contract.try_operator()
   const ledgerAddress = contract.try_ledger()
+  const assetAddress = contract.try_asset()
   return {
     name: nameResult.reverted ? 'unknown' : nameResult.value,
     description: descriptionResult.reverted
@@ -82,7 +84,8 @@ export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
     operatorAddress: operatorAddress.reverted
       ? ADDRESS_ZERO
       : operatorAddress.value,
-    ledgerAddress: ledgerAddress.reverted ? ADDRESS_ZERO : ledgerAddress.value
+    ledgerAddress: ledgerAddress.reverted ? ADDRESS_ZERO : ledgerAddress.value,
+    assetAddress: assetAddress.reverted ? ADDRESS_ZERO : assetAddress.value
   } as DAOPrimaryInfo
 }
 
@@ -147,4 +150,10 @@ export function fetchVoteProposalValue(
     isClose: proposal.isClose,
     isExecuted: proposal.isExecuted
   } as ProposalInfo
+}
+
+export function fetchAssetValue(address: Address, tokenId: BigInt): void {
+  const contract = AssetContract.bind(address)
+  const contractURI = contract.contractURI()
+  log.debug('Fetching Asset Contract URI {}', [contractURI])
 }
