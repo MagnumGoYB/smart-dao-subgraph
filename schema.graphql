@@ -12,6 +12,16 @@ type Statistic @entity {
   totalAccounts: BigInt!
   "Total Proposals"
   totalProposals: BigInt!
+  "Total Assets"
+  totalAssets: BigInt!
+  "Total Destroyed Assets"
+  totalDestroyedAssets: BigInt!
+  "Total Asset Amount"
+  totalAssetsAmount: BigInt!
+  "Total Destroyed Assets Amount"
+  totalDestroyedAssetsAmount: BigInt!
+  "Total Asset Minimum Price"
+  totalAssetsMinimumPrice: BigInt!
 }
 
 """
@@ -34,14 +44,14 @@ type DAO @entity {
   image: String
   "Extend Data"
   extend: Bytes
-  "Member Info"
-  memberInfo: MemberInfo
+  "Member Pool"
+  memberPool: MemberPool
   "vote Pool"
   votePool: VotePool
   "Ledger Pool"
   ledgerPool: LedgerPool
   "Asset Pool"
-  assetPool: AssetPool
+  assetPool: [AssetPool!]
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -50,18 +60,24 @@ type DAO @entity {
   blockTimestamp: BigInt!
   "Accounts"
   accounts: [Account!]!
+  "members"
+  members: [Member!] @derivedFrom(field: "host")
+  "Assets"
+  assets: [Asset!] @derivedFrom(field: "host")
+  "Proposals"
+  proposals: [Proposal!] @derivedFrom(field: "host")
 }
 
 """
-Member Info
+Member Pool
 """
-type MemberInfo @entity {
+type MemberPool @entity {
   "ID (hash) - Contract Address"
   id: ID!
   "Belong DAO"
-  dao: DAO!
+  host: DAO!
   "Members"
-  members: [Member!] @derivedFrom(field: "infoBy")
+  members: [Member!] @derivedFrom(field: "memberPool")
   "Name"
   name: String
   "Member Count"
@@ -74,10 +90,14 @@ Member
 type Member @entity {
   "ID (hash) - (DAO Address).concat('-').concat(tokenId)"
   id: ID!
+  "Belong DAO"
+  host: DAO!
+  "721 Token Address"
+  token: Bytes!
   "721 Token ID"
   tokenId: BigInt!
-  "Account"
-  account: Account!
+  "Owner"
+  owner: Account!
   "Name"
   name: String
   "Description"
@@ -86,8 +106,8 @@ type Member @entity {
   image: String
   "Vote Power"
   votes: BigInt
-  "Info By"
-  infoBy: MemberInfo!
+  "Member Pool"
+  memberPool: MemberPool!
 }
 
 """
@@ -97,7 +117,7 @@ type Account @entity {
   "ID (hash) - Wallet Address"
   id: ID!
   "Belong DAOs"
-  daos: [DAO!]! @derivedFrom(field: "accounts")
+  hosts: [DAO!]! @derivedFrom(field: "accounts")
 }
 
 """
@@ -107,7 +127,7 @@ type VotePool @entity {
   "ID (hash) - Contract Address"
   id: ID!
   "Belong DAO"
-  dao: DAO!
+  host: DAO!
   "Proposals"
   proposals: [Proposal!] @derivedFrom(field: "votePool")
   "Proposals Count"
@@ -120,6 +140,8 @@ Vote Proposal
 type Proposal @entity {
   "ID (hash)"
   id: ID!
+  "Belong DAO"
+  host: DAO!
   "Belong Vote Pool"
   votePool: VotePool!
   "is Anonymous"
@@ -177,7 +199,7 @@ type LedgerPool @entity {
   "ID (hash) - Contract Address"
   id: ID!
   "Belong DAO"
-  dao: DAO!
+  host: DAO!
   "Ledgers"
   ledgers: [Ledger!] @derivedFrom(field: "ledgerPool")
   "Ledgers Count"
@@ -211,7 +233,7 @@ type Ledger @entity {
   "Tx Hash"
   txHash: Bytes!
   "DAO Host"
-  dao: DAO!
+  host: DAO!
   "Type"
   type: LedgerType
   "Name"
@@ -236,6 +258,11 @@ type Ledger @entity {
   # assetIncome?: LedgerAssetIncome;
 }
 
+enum AssetPoolType {
+  Frist
+  Second
+}
+
 """
 Asset Pool
 """
@@ -243,59 +270,79 @@ type AssetPool @entity {
   "ID (hash) - Contract Address"
   id: ID!
   "Belong DAO"
-  dao: DAO!
+  host: DAO!
   "Assets"
   assets: [Asset!] @derivedFrom(field: "assetPool")
   "Assets Count"
   count: BigInt!
+  "Asset Total Amount"
+  amountTotal: BigInt!
+  "Asset Minimum Price Total"
+  minimumPriceTotal: BigInt!
+  "Type"
+  type: AssetPoolType!
 }
 
-# Asset {
-#   id: number;
-#   host: string; // dao address
-#   token: string; // 合约地址
-#   tokenId: string; // id
-#   uri: string; // tokenURI
-#   owner: string; // 属主
-#   author: string; // 作者地址
-#   selling: Selling; // 最后上架销售类型: 0未销售,1销售opensea,2其它平台
-#   sellPrice: string; // 最后上架销售价格
-#   minimumPrice: string; // 最小销售价格
-#   state: State; // 状态: 0正常,1删除
-#   time: number; // 数据入库时间
-#   modify: number; // 修改时间（非链上数据修改）
-#   name: string; //                   varchar (256)  default ('') not null,  -- 名称
-#   imageOriign: string; //            varchar (512)  default ('') not null,  -- origin image uri
-#   mediaOrigin: string; //            varchar (512)  default ('') not null,  -- origin media uri
-#   description: string; //            varchar (2048) default ('') not null,  -- 详细信息
-#   externalLink: string; //           varchar (512)  default ('') not null,  -- 外部链接
-#   properties: any | null; //         json                            null,  -- 附加信息
-#   blockNumber: number; //            int            default (0)  not null,  -- 创建区块号
-#   backgroundColor: string; //        varchar (32)   default ('') not null,  -- 背景
-#   categorie: number; //              int            default (0)  not null,  -- 类别
-#   retry: number; //                  int            default (0)  not null   -- 抓取数据重试次数, sync uri data retry count
-#   retryTime: number; //              bigint         default (0)  not null,  -- 抓取数据最后重试时间
-#   totalSupply: string; //            varchar (66)                not null    -- total supply
-#   assetType: AssetType; //          int                         not null   -- asset type, 721/1155
-# }
+enum AssetType {
+  Invalid
+  ERC1155_Single
+  ERC1155
+  ERC20
+  ERC721
+}
+
+enum Selling {
+  UnsellOrUnknown
+  Order
+  Opensea
+}
+
 """
 Asset
 """
 type Asset @entity {
   "ID (hash) - (DAO Address).concat('-').concat(tokenId)"
   id: ID!
+  "DAO Host"
+  host: DAO!
+  "ERC-1155 Token Address"
+  token: Bytes!
   "ERC-1155 Token ID"
   tokenId: BigInt!
-  "Belong Asset Pool"
-  assetPool: AssetPool!
-  "Address"
-  address: Bytes!
   "Token URI"
   uri: String
+  "Total Supply"
+  totalSupply: BigInt!
+  "Asset Type"
+  assetType: AssetType!
+  "Belong Asset Pool"
+  assetPool: AssetPool!
+  "Author"
+  author: Account!
+  "Owner"
+  owner: Account
+  "State"
+  state: State!
+  "Selling State"
+  selling: Selling!
+  "Sell Price"
+  sellPrice: BigInt!
+  "Minimum Price"
+  minimumPrice: BigInt!
   "Name"
   name: String
   "Description"
   description: String
+  "Origin Image Link"
+  imageOriign: String
+  "Origin media Link"
+  mediaOrigin: String
+  "External Link"
+  externalLink: String
+  "Background Color"
+  backgroundColor: String
+  "Categorie"
+  categorie: Int
   "Block ID (hash)"
   blockId: ID!
   "Block Number"

@@ -148,6 +148,10 @@ templates:
           file: ./abis/ERC1155.json
         - name: Asset
           file: ./abis/Asset.json
+        - name: AssetShell
+          file: ./abis/AssetShell.json
       eventHandlers:
         - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
           handler: handleTransferSingle
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch

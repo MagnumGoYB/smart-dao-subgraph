@@ -1,10 +1,11 @@
 import { Address, Bytes, log, BigInt } from '@graphprotocol/graph-ts'
 
-import { ADDRESS_ZERO, ZERO_BI } from './utils'
-import { Asset as AssetContract } from '../generated/templates/AssetInitializable/Asset'
+import { Asset } from '../generated/schema'
+import { AssetShell as AssetShellContract } from '../generated/templates/AssetInitializable/AssetShell'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
 import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
+import { ZERO_BI } from './utils'
 
 export class DAOPrimaryInfo {
   name: string
@@ -17,6 +18,7 @@ export class DAOPrimaryInfo {
   operatorAddress: Address
   ledgerAddress: Address
   assetAddress: Address
+  asset2Address: Address
 }
 
 export class MemberInfo {
@@ -48,6 +50,18 @@ export class ProposalInfo {
   isExecuted: boolean
 }
 
+export class AssetInfo {
+  name: string
+  description: string
+  uri: string
+  baseURI: string
+  totalSupply: BigInt
+  token: Address
+  tokenId: BigInt
+  minimumPrice: BigInt
+  externalLink: string
+}
+
 export class CreateLedgerParam {
   from: Address | null
   balance: BigInt | null
@@ -59,33 +73,18 @@ export class CreateLedgerParam {
 
 export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
   const contract = DAOContract.bind(address)
-  const nameResult = contract.try_name()
-  const descriptionResult = contract.try_description()
-  const missionResult = contract.try_mission()
-  const imageResult = contract.try_image()
-  const extendResult = contract.try_extend()
-  const memberAddress = contract.try_member()
-  const votePoolAddress = contract.try_root()
-  const operatorAddress = contract.try_operator()
-  const ledgerAddress = contract.try_ledger()
-  const assetAddress = contract.try_asset()
   return {
-    name: nameResult.reverted ? 'unknown' : nameResult.value,
-    description: descriptionResult.reverted
-      ? 'unknown'
-      : descriptionResult.value,
-    mission: missionResult.reverted ? 'unknown' : missionResult.value,
-    image: imageResult.reverted ? 'unknown' : imageResult.value,
-    extend: extendResult.reverted ? null : extendResult.value,
-    memberAddress: memberAddress.reverted ? ADDRESS_ZERO : memberAddress.value,
-    votePoolAddress: votePoolAddress.reverted
-      ? ADDRESS_ZERO
-      : votePoolAddress.value,
-    operatorAddress: operatorAddress.reverted
-      ? ADDRESS_ZERO
-      : operatorAddress.value,
-    ledgerAddress: ledgerAddress.reverted ? ADDRESS_ZERO : ledgerAddress.value,
-    assetAddress: assetAddress.reverted ? ADDRESS_ZERO : assetAddress.value
+    name: contract.name(),
+    description: contract.description(),
+    mission: contract.mission(),
+    image: contract.image(),
+    extend: contract.extend(),
+    memberAddress: contract.member(),
+    votePoolAddress: contract.root(),
+    operatorAddress: contract.operator(),
+    ledgerAddress: contract.ledger(),
+    assetAddress: contract.first(),
+    asset2Address: contract.second()
   } as DAOPrimaryInfo
 }
 
@@ -152,8 +151,22 @@ export function fetchVoteProposalValue(
   } as ProposalInfo
 }
 
-export function fetchAssetValue(address: Address, tokenId: BigInt): void {
-  const contract = AssetContract.bind(address)
-  const contractURI = contract.contractURI()
-  log.debug('Fetching Asset Contract URI {}', [contractURI])
+export function fetchAssetShellValue(
+  address: Address,
+  tokenId: BigInt
+): AssetInfo {
+  const contract = AssetShellContract.bind(address)
+  const meta = contract.assetMeta(tokenId)
+
+  return {
+    uri: contract.uri(tokenId),
+    name: contract.name(),
+    description: contract.description(),
+    baseURI: contract.baseURI(),
+    totalSupply: contract.totalSupply(tokenId),
+    token: meta.token,
+    tokenId: meta.tokenId,
+    minimumPrice: contract.minimumPrice(tokenId),
+    externalLink: contract.external_link()
+  } as AssetInfo
 }

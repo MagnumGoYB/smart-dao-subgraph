@@ -6,7 +6,7 @@ import {
   getOrCreateAssetPool,
   getOrCreateDAO,
   getOrCreateLedgerPool,
-  getOrCreateMemberInfo,
+  getOrCreateMemberPool,
   getOrCreateVotePool
 } from './utils'
 import {
@@ -55,14 +55,43 @@ export function handleCreated(event: CreatedEvent): void {
   ])
 
   if (daoBasicInfo.assetAddress) {
-    AssetInitializable.createWithContext(daoBasicInfo.assetAddress, context)
+    const assetContext = new DataSourceContext()
+    assetContext.setString('DAOAddress', event.params.dao.toHex())
+    assetContext.setString('type', 'Frist')
+    AssetInitializable.createWithContext(
+      daoBasicInfo.assetAddress,
+      assetContext
+    )
     log.info('Asset Contract initialized: {}', [
       daoBasicInfo.assetAddress.toHex()
     ])
-    dao.assetPool = getOrCreateAssetPool(
-      daoBasicInfo.ledgerAddress,
-      event.params.dao
-    ).id
+    dao.assetPool = [
+      getOrCreateAssetPool(daoBasicInfo.assetAddress, event.params.dao, 'Frist')
+        .id
+    ]
+
+    if (daoBasicInfo.asset2Address) {
+      assetContext.setString('type', 'Second')
+      AssetInitializable.createWithContext(
+        daoBasicInfo.asset2Address,
+        assetContext
+      )
+      log.info('Asset Secondary Contract initialized: {}', [
+        daoBasicInfo.asset2Address.toHex()
+      ])
+      dao.assetPool = [
+        getOrCreateAssetPool(
+          daoBasicInfo.assetAddress,
+          event.params.dao,
+          'Frist'
+        ).id,
+        getOrCreateAssetPool(
+          daoBasicInfo.asset2Address,
+          event.params.dao,
+          'Second'
+        ).id
+      ]
+    }
   }
 
   dao.name = daoBasicInfo.name
@@ -74,7 +103,7 @@ export function handleCreated(event: CreatedEvent): void {
     daoBasicInfo.votePoolAddress,
     event.params.dao
   ).id
-  dao.memberInfo = getOrCreateMemberInfo(
+  dao.memberPool = getOrCreateMemberPool(
     daoBasicInfo.memberAddress,
     event.params.dao
   ).id

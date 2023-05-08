@@ -35,9 +35,9 @@ export function handleTransfer(event: TransferEvent): void {
       dataSource.address()
     )
 
-    log.info('DAO Member Created. Member ID {}, Account ID {}', [
+    log.info('DAO Member Created. Member ID {}, Owner {}', [
       member.id,
-      member.account
+      member.owner
     ])
   }
 }

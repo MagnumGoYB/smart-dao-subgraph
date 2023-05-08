@@ -2,17 +2,22 @@ import { Address, Bytes, BigInt, log, ethereum } from '@graphprotocol/graph-ts'
 
 import {
   Account,
+  Asset,
   AssetPool,
   DAO,
   Ledger,
   LedgerPool,
   Member,
-  MemberInfo,
+  MemberPool,
   Proposal,
   Statistic,
   VotePool
 } from '../generated/schema'
-import { fetchMemberValue, fetchVoteProposalValue } from './fetch-contracts'
+import {
+  fetchAssetShellValue,
+  fetchMemberValue,
+  fetchVoteProposalValue
+} from './fetch-contracts'
 
 export * from './fetch-contracts'
 
@@ -37,6 +42,11 @@ export function getOrCreateStatistic(): Statistic {
     statistic.totalMembers = ZERO_BI
     statistic.totalAccounts = ZERO_BI
     statistic.totalProposals = ZERO_BI
+    statistic.totalAssets = ZERO_BI
+    statistic.totalDestroyedAssets = ZERO_BI
+    statistic.totalAssetsAmount = ZERO_BI
+    statistic.totalDestroyedAssetsAmount = ZERO_BI
+    statistic.totalAssetsMinimumPrice = ZERO_BI
   }
   return statistic as Statistic
 }
@@ -69,82 +79,20 @@ export function getOrCreateAccount(address: Address): Account {
   return account as Account
 }
 
-export function getOrCreateMemberInfo(
-  memberInfoAddress: Address,
+export function getOrCreateMemberPool(
+  memberPoolAddress: Address,
   DAOAddress: Address
-): MemberInfo {
-  const id = memberInfoAddress.toHex()
-  let memberInfo = MemberInfo.load(id)
-  if (memberInfo === null) {
-    memberInfo = new MemberInfo(id)
-    memberInfo.dao = DAOAddress.toHex()
-    memberInfo.count = ZERO_BI
-    memberInfo.save()
+): MemberPool {
+  const id = memberPoolAddress.toHex()
+  let memberPool = MemberPool.load(id)
+  if (memberPool === null) {
+    memberPool = new MemberPool(id)
+    memberPool.host = DAOAddress.toHex()
+    memberPool.count = ZERO_BI
+    memberPool.save()
   }
 
-  return memberInfo as MemberInfo
-}
-
-export function getOrCreateMember(
-  accountAddress: Address,
-  DAOAddress: Address,
-  memberTokenId: BigInt,
-  memberInfoAddress: Address
-): Member {
-  const memberValues = fetchMemberValue(memberInfoAddress, memberTokenId)
-
-  let memberInfo = getOrCreateMemberInfo(memberInfoAddress, DAOAddress)
-  memberInfo.name = memberValues.baseName
-  memberInfo.save()
-
-  let dao = getOrCreateDAO(DAOAddress)
-  dao.memberInfo = memberInfo.id
-  dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
-  dao.save()
-
-  const account = getOrCreateAccount(accountAddress)
-  dao.accounts = dao.accounts.concat([account.id])
-  dao.save()
-
-  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
-  log.debug('Member ID {}', [id])
-  let member = Member.load(id)
-  if (member === null) {
-    member = new Member(id)
-    member.account = account.id
-    member.tokenId = memberTokenId
-    member.description = memberValues.description
-    member.name = memberValues.name
-    member.image = memberValues.image
-    member.infoBy = memberInfo.id
-    member.votes = memberValues.votes
-    member.save()
-
-    memberInfo.count = memberInfo.count.plus(ONE_BI)
-    memberInfo.save()
-
-    const statistic = getOrCreateStatistic()
-    statistic.totalMembers = statistic.totalMembers.plus(ONE_BI)
-    statistic.save()
-  }
-  return member as Member
-}
-
-export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
-  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
-  const member = Member.load(id)
-  if (member === null) {
-    log.warning('DAO Set Executor. Member ID {} Not Found', [id])
-    return
-  }
-  let dao = DAO.load(DAOAddress.toHex())
-  if (dao === null) {
-    log.warning('DAO Set Executor. DAO ID {} Not Found', [DAOAddress.toHex()])
-    return
-  }
-  dao.executor = member.id
-  dao.save()
-  log.info('DAO Update Executor Success. Member ID {}', [member.id])
+  return memberPool as MemberPool
 }
 
 export function getOrCreateVotePool(
@@ -155,7 +103,7 @@ export function getOrCreateVotePool(
   let votePool = VotePool.load(id)
   if (votePool === null) {
     votePool = new VotePool(id)
-    votePool.dao = DAOAddress.toHex()
+    votePool.host = DAOAddress.toHex()
     votePool.count = ZERO_BI
     votePool.save()
     log.info('Vote Pool Created. ID {}', [id])
@@ -171,7 +119,7 @@ export function getOrCreateLedgerPool(
   let ledgerPool = LedgerPool.load(id)
   if (ledgerPool === null) {
     ledgerPool = new LedgerPool(id)
-    ledgerPool.dao = DAOAddress.toHex()
+    ledgerPool.host = DAOAddress.toHex()
     ledgerPool.count = ZERO_BI
     ledgerPool.save()
     log.info('Ledger Pool Created. ID {}', [id])
@@ -181,18 +129,69 @@ export function getOrCreateLedgerPool(
 
 export function getOrCreateAssetPool(
   address: Address,
-  DAOAddress: Address
+  DAOAddress: Address,
+  type: string
 ): AssetPool {
   const id = address.toHex()
   let assetPool = AssetPool.load(id)
   if (assetPool === null) {
     assetPool = new AssetPool(id)
-    assetPool.dao = DAOAddress.toHex()
+    assetPool.host = DAOAddress.toHex()
     assetPool.count = ZERO_BI
+    assetPool.amountTotal = ZERO_BI
+    assetPool.minimumPriceTotal = ZERO_BI
+    assetPool.type = type
     assetPool.save()
     log.info('Asset Pool Created. ID {}', [id])
   }
   return assetPool as AssetPool
+}
+
+export function getOrCreateMember(
+  accountAddress: Address,
+  DAOAddress: Address,
+  memberTokenId: BigInt,
+  memberPoolAddress: Address
+): Member {
+  const memberValues = fetchMemberValue(memberPoolAddress, memberTokenId)
+
+  let memberPool = getOrCreateMemberPool(memberPoolAddress, DAOAddress)
+  memberPool.name = memberValues.baseName
+  memberPool.save()
+
+  let dao = getOrCreateDAO(DAOAddress)
+  dao.memberPool = memberPool.id
+  dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  dao.save()
+
+  const account = getOrCreateAccount(accountAddress)
+  dao.accounts = dao.accounts.concat([account.id])
+  dao.save()
+
+  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  log.debug('Member ID {}', [id])
+  let member = Member.load(id)
+  if (member === null) {
+    member = new Member(id)
+    member.owner = account.id
+    member.token = memberPoolAddress
+    member.tokenId = memberTokenId
+    member.description = memberValues.description
+    member.name = memberValues.name
+    member.image = memberValues.image
+    member.memberPool = memberPool.id
+    member.votes = memberValues.votes
+    member.host = DAOAddress.toHex()
+    member.save()
+
+    memberPool.count = memberPool.count.plus(ONE_BI)
+    memberPool.save()
+
+    const statistic = getOrCreateStatistic()
+    statistic.totalMembers = statistic.totalMembers.plus(ONE_BI)
+    statistic.save()
+  }
+  return member as Member
 }
 
 export function getOrCreateVotePoolProposal(
@@ -210,6 +209,7 @@ export function getOrCreateVotePoolProposal(
   let voteProposal = Proposal.load(proposalId)
   if (voteProposal === null) {
     voteProposal = new Proposal(proposalId)
+    voteProposal.host = dao.id
     voteProposal.votePool = votePool.id
     const info = fetchVoteProposalValue(id, address, DAOAddress)
     voteProposal.name = info.name
@@ -281,7 +281,8 @@ export function getOrCreateLedger(
   let ledger = Ledger.load(id)
   if (ledger === null) {
     ledger = new Ledger(id)
-    ledger.dao = dao.id
+    ledger.host = dao.id
+    ledger.ledgerPool = ledgerPool.id
     ledger.address = address
     ledger.txHash = txHash
     ledger.blockId = block.hash.toHex()
@@ -333,4 +334,86 @@ export function getOrCreateLedger(
     ledgerPool.save()
   }
   return ledger as Ledger
+}
+
+export function getOrCreateAsset(
+  address: Address,
+  DAOAddress: Address,
+  tokenId: BigInt,
+  to: Address,
+  price: BigInt,
+  type: string,
+  block: ethereum.Block
+): Asset {
+  const assetValues = fetchAssetShellValue(address, tokenId)
+  const id = address.toHex().concat('-').concat(assetValues.tokenId.toHex())
+  const assetPool = getOrCreateAssetPool(address, DAOAddress, type)
+
+  let asset = Asset.load(id)
+  if (asset === null) {
+    asset = new Asset(id)
+    asset.host = DAOAddress.toHex()
+    asset.token = assetValues.token
+    asset.tokenId = assetValues.tokenId
+    asset.totalSupply = assetValues.totalSupply
+    asset.uri = assetValues.uri
+    asset.name = assetValues.name
+    asset.description = assetValues.description
+    asset.externalLink = assetValues.externalLink
+    asset.blockId = block.hash.toHex()
+    asset.blockNumber = block.number
+    asset.blockTimestamp = block.timestamp
+    asset.assetPool = assetPool.id
+    asset.author = to.toHex()
+    asset.owner = to.toHex()
+    asset.selling = 'UnsellOrUnknown'
+    asset.sellPrice = price
+    asset.state = 'Enable'
+    asset.minimumPrice = assetValues.minimumPrice
+    asset.assetType = assetValues.tokenId.mod(BigInt.fromI32(2))
+      ? 'ERC1155'
+      : 'ERC1155_Single'
+    asset.save()
+
+    log.info('Asset Created. ID {}', [id])
+
+    assetPool.count = assetPool.count.plus(ONE_BI)
+    assetPool.amountTotal = assetPool.amountTotal.plus(price)
+    assetPool.minimumPriceTotal = assetPool.minimumPriceTotal.plus(
+      assetValues.minimumPrice
+    )
+    assetPool.save()
+
+    log.debug('Asset Pool Update. ID {}, Count {}, Amount {}', [
+      assetPool.id,
+      assetPool.count.toHex(),
+      assetPool.amountTotal.toHex()
+    ])
+
+    const statistic = getOrCreateStatistic()
+    statistic.totalAssets = statistic.totalAssets.plus(ONE_BI)
+    statistic.totalAssetsAmount = statistic.totalAssetsAmount.plus(price)
+    statistic.totalAssetsMinimumPrice = statistic.totalAssetsMinimumPrice.plus(
+      assetValues.minimumPrice
+    )
+    statistic.save()
+  }
+  return asset as Asset
+}
+
+export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
+  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  const member = Member.load(id)
+  if (member === null) {
+    log.warning('DAO Set Executor. Member ID {} Not Found', [id])
+    return
+  }
+  let dao = DAO.load(DAOAddress.toHex())
+  if (dao === null) {
+    log.warning('DAO Set Executor. DAO ID {} Not Found', [DAOAddress.toHex()])
+    return
+  }
+  dao.executor = member.id
+  dao.save()
+  log.info('DAO Update Executor Success. Member ID {}', [member.id])
 }
