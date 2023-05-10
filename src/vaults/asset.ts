@@ -4,6 +4,7 @@ import {
   ADDRESS_ZERO,
   ONE_BI,
   getOrCreateAsset,
+  getOrCreateAssetOrder,
   getOrCreateAssetPool,
   getOrCreateStatistic
 } from '../utils'
@@ -29,55 +30,33 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
     ]
   )
 
-  if (
-    ADDRESS_ZERO.equals(event.params.from) &&
-    !ADDRESS_ZERO.equals(event.params.to)
-  ) {
-    // Asset created
-    getOrCreateAsset(
-      dataSource.address(),
-      Address.fromString(DAOAddress),
-      event.params.id,
-      event.params.to,
-      event.transaction.value,
-      type,
-      event.block
-    )
-
-    log.info('Asset Created. Asset Address {}, ID {}, Owner {}', [
-      dataSource.address().toHex(),
-      event.params.id.toHex(),
-      event.params.to.toHex()
-    ])
-  }
+  const statistic = getOrCreateStatistic()
+  const pool = getOrCreateAssetPool(
+    dataSource.address(),
+    Address.fromString(DAOAddress),
+    type
+  )
+  const asset = getOrCreateAsset(
+    dataSource.address(),
+    pool,
+    event.params.id,
+    event.params.to,
+    event.block,
+    event.transaction
+  )
 
   if (
     !ADDRESS_ZERO.equals(event.params.from) &&
     !ADDRESS_ZERO.equals(event.params.to)
   ) {
     // Asset transferred
-    const asset = getOrCreateAsset(
-      dataSource.address(),
-      Address.fromString(DAOAddress),
-      event.params.id,
-      event.params.to,
-      event.transaction.value,
-      type,
-      event.block
-    )
-
     asset.selling = 'Opensea'
     asset.sellPrice = event.transaction.value
     asset.owner = event.params.to.toHex()
     asset.save()
 
-    const assetPool = getOrCreateAssetPool(
-      dataSource.address(),
-      Address.fromString(DAOAddress),
-      type
-    )
-    assetPool.amountTotal = assetPool.amountTotal.plus(event.transaction.value)
-    assetPool.save()
+    pool.amountTotal = pool.amountTotal.plus(event.transaction.value)
+    pool.save()
 
     log.info('Asset Transferred. Asset Address {}, ID {}, From {}, To {}', [
       dataSource.address().toHex(),
@@ -92,34 +71,17 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
     !ADDRESS_ZERO.equals(event.params.from)
   ) {
     // Asset destroyed
-    const asset = getOrCreateAsset(
-      dataSource.address(),
-      Address.fromString(DAOAddress),
-      event.params.id,
-      event.params.to,
-      event.transaction.value,
-      type,
-      event.block
-    )
     asset.owner = ADDRESS_ZERO.toHex()
     asset.state = 'Disable'
     asset.totalSupply = asset.totalSupply.minus(event.params.value)
     asset.save()
 
-    const assetPool = getOrCreateAssetPool(
-      dataSource.address(),
-      Address.fromString(DAOAddress),
-      type
-    )
-    assetPool.total = assetPool.total.minus(ONE_BI)
-    assetPool.totalSupply = assetPool.totalSupply.minus(event.params.value)
-    assetPool.amountTotal = assetPool.amountTotal.minus(event.transaction.value)
-    assetPool.minimumPriceTotal = assetPool.minimumPriceTotal.minus(
-      asset.minimumPrice
-    )
-    assetPool.save()
+    pool.total = pool.total.minus(ONE_BI)
+    pool.totalSupply = pool.totalSupply.minus(event.params.value)
+    pool.amountTotal = pool.amountTotal.minus(event.transaction.value)
+    pool.minimumPriceTotal = pool.minimumPriceTotal.minus(asset.minimumPrice)
+    pool.save()
 
-    const statistic = getOrCreateStatistic()
     statistic.totalDestroyedAssets = statistic.totalDestroyedAssets.plus(
       event.params.value
     )
@@ -132,6 +94,14 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
       event.params.id.toHex()
     ])
   }
+
+  getOrCreateAssetOrder(
+    pool,
+    asset,
+    event.block,
+    event.transaction,
+    event.logIndex
+  )
 }
 
 export function handleTransferBatch(event: TransferBatchEvent): void {
@@ -147,27 +117,35 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
     ]
   )
 
+  const statistic = getOrCreateStatistic()
+  const pool = getOrCreateAssetPool(
+    dataSource.address(),
+    Address.fromString(DAOAddress),
+    type
+  )
+
   if (
     ADDRESS_ZERO.equals(event.params.from) &&
     !ADDRESS_ZERO.equals(event.params.to)
   ) {
     // Asset created
     for (let i = 0; i < event.params.ids.length; i++) {
-      getOrCreateAsset(
+      const asset = getOrCreateAsset(
         dataSource.address(),
-        Address.fromString(DAOAddress),
+        pool,
         event.params.ids[i],
         event.params.to,
-        event.transaction.value,
-        type,
-        event.block
+        event.block,
+        event.transaction
       )
 
-      log.info('Asset Batch Created. Asset Address {}, ID {}, Owner {}', [
-        dataSource.address().toHex(),
-        event.params.ids[i].toHex(),
-        event.params.to.toHex()
-      ])
+      getOrCreateAssetOrder(
+        pool,
+        asset,
+        event.block,
+        event.transaction,
+        event.logIndex
+      )
     }
   }
 
@@ -179,12 +157,11 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
     for (let i = 0; i < event.params.ids.length; i++) {
       const asset = getOrCreateAsset(
         dataSource.address(),
-        Address.fromString(DAOAddress),
+        pool,
         event.params.ids[i],
         event.params.to,
-        event.transaction.value,
-        type,
-        event.block
+        event.block,
+        event.transaction
       )
 
       asset.selling = 'Opensea'
@@ -192,15 +169,8 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       asset.owner = event.params.to.toHex()
       asset.save()
 
-      const assetPool = getOrCreateAssetPool(
-        dataSource.address(),
-        Address.fromString(DAOAddress),
-        type
-      )
-      assetPool.amountTotal = assetPool.amountTotal.plus(
-        event.transaction.value
-      )
-      assetPool.save()
+      pool.amountTotal = pool.amountTotal.plus(event.transaction.value)
+      pool.save()
 
       log.info(
         'Asset Batch Transferred. Asset Address {}, ID {}, From {}, To {}',
@@ -210,6 +180,14 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
           event.params.from.toHex(),
           event.params.to.toHex()
         ]
+      )
+
+      getOrCreateAssetOrder(
+        pool,
+        asset,
+        event.block,
+        event.transaction,
+        event.logIndex
       )
     }
   }
@@ -222,12 +200,11 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
     for (let i = 0; i < event.params.ids.length; i++) {
       const asset = getOrCreateAsset(
         dataSource.address(),
-        Address.fromString(DAOAddress),
+        pool,
         event.params.ids[i],
         event.params.to,
-        event.transaction.value,
-        type,
-        event.block
+        event.block,
+        event.transaction
       )
 
       asset.owner = ADDRESS_ZERO.toHex()
@@ -235,24 +212,12 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       asset.totalSupply = asset.totalSupply.minus(event.params.values[i])
       asset.save()
 
-      const assetPool = getOrCreateAssetPool(
-        dataSource.address(),
-        Address.fromString(DAOAddress),
-        type
-      )
-      assetPool.total = assetPool.total.minus(ONE_BI)
-      assetPool.totalSupply = assetPool.totalSupply.minus(
-        event.params.values[i]
-      )
-      assetPool.amountTotal = assetPool.amountTotal.minus(
-        event.transaction.value
-      )
-      assetPool.minimumPriceTotal = assetPool.minimumPriceTotal.minus(
-        asset.minimumPrice
-      )
-      assetPool.save()
+      pool.total = pool.total.minus(ONE_BI)
+      pool.totalSupply = pool.totalSupply.minus(event.params.values[i])
+      pool.amountTotal = pool.amountTotal.minus(event.transaction.value)
+      pool.minimumPriceTotal = pool.minimumPriceTotal.minus(asset.minimumPrice)
+      pool.save()
 
-      const statistic = getOrCreateStatistic()
       statistic.totalDestroyedAssets = statistic.totalDestroyedAssets.plus(
         event.params.values[i]
       )
@@ -264,6 +229,14 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
         dataSource.address().toHex(),
         event.params.ids[i].toHex()
       ])
+
+      getOrCreateAssetOrder(
+        pool,
+        asset,
+        event.block,
+        event.transaction,
+        event.logIndex
+      )
     }
   }
 }

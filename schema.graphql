@@ -22,6 +22,10 @@ type Statistic @entity {
   totalDestroyedAssetsAmount: BigInt!
   "Total Asset Minimum Price"
   totalAssetsMinimumPrice: BigInt!
+  "TOtal Asset Order"
+  totalAssetsOrder: BigInt!
+  "Asset Asset Order Amount"
+  totalAssetsOrderAmount: BigInt!
 }
 
 """
@@ -281,6 +285,10 @@ type AssetPool @entity {
   amountTotal: BigInt!
   "Asset Minimum Price Total"
   minimumPriceTotal: BigInt!
+  "Asset Order Total"
+  orderTotal: BigInt!
+  "Asset Order Amount Total"
+  orderAmountTotal: BigInt!
   "Type"
   type: AssetPoolType!
 }
@@ -345,6 +353,31 @@ type Asset @entity {
   backgroundColor: String
   "Categorie"
   categorie: Int
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
+}
+
+type AssetOrder @entity {
+  "ID (hash) - (Asset ID).concat('-').concat(txHash)"
+  id: ID!
+  "DAO Host"
+  host: DAO!
+  "Belong Asset"
+  asset: Asset!
+  "Tx Hash"
+  txHash: Bytes!
+  "Tx Value"
+  value: BigInt!
+  "From Address"
+  from: Bytes!
+  "To Address"
+  to: Bytes!
+  "Log Index"
+  logIndex: BigInt!
   "Block ID (hash)"
   blockId: ID!
   "Block Number"

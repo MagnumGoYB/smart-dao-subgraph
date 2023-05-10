@@ -3,6 +3,7 @@ import { Address, Bytes, BigInt, log, ethereum } from '@graphprotocol/graph-ts'
 import {
   Account,
   Asset,
+  AssetOrder,
   AssetPool,
   DAO,
   Ledger,
@@ -47,6 +48,8 @@ export function getOrCreateStatistic(): Statistic {
     statistic.totalAssetsAmount = ZERO_BI
     statistic.totalDestroyedAssetsAmount = ZERO_BI
     statistic.totalAssetsMinimumPrice = ZERO_BI
+    statistic.totalAssetsOrder = ZERO_BI
+    statistic.totalAssetsOrderAmount = ZERO_BI
   }
   return statistic as Statistic
 }
@@ -141,6 +144,8 @@ export function getOrCreateAssetPool(
     assetPool.totalSupply = ZERO_BI
     assetPool.amountTotal = ZERO_BI
     assetPool.minimumPriceTotal = ZERO_BI
+    assetPool.orderTotal = ZERO_BI
+    assetPool.orderAmountTotal = ZERO_BI
     assetPool.type = type
     assetPool.save()
     log.info('Asset Pool Created. ID {}', [id])
@@ -339,21 +344,19 @@ export function getOrCreateLedger(
 
 export function getOrCreateAsset(
   address: Address,
-  DAOAddress: Address,
+  pool: AssetPool,
   tokenId: BigInt,
   to: Address,
-  price: BigInt,
-  type: string,
-  block: ethereum.Block
+  block: ethereum.Block,
+  tx: ethereum.Transaction
 ): Asset {
   const assetValues = fetchAssetShellValue(address, tokenId)
   const id = address.toHex().concat('-').concat(assetValues.tokenId.toHex())
-  const assetPool = getOrCreateAssetPool(address, DAOAddress, type)
-
+  const statistic = getOrCreateStatistic()
   let asset = Asset.load(id)
   if (asset === null) {
     asset = new Asset(id)
-    asset.host = DAOAddress.toHex()
+    asset.host = pool.host
     asset.token = assetValues.token
     asset.tokenId = assetValues.tokenId
     asset.totalSupply = assetValues.totalSupply
@@ -364,11 +367,11 @@ export function getOrCreateAsset(
     asset.blockId = block.hash.toHex()
     asset.blockNumber = block.number
     asset.blockTimestamp = block.timestamp
-    asset.assetPool = assetPool.id
+    asset.assetPool = pool.id
     asset.author = to.toHex()
     asset.owner = to.toHex()
     asset.selling = 'UnsellOrUnknown'
-    asset.sellPrice = price
+    asset.sellPrice = tx.value
     asset.state = 'Enable'
     asset.minimumPrice = assetValues.minimumPrice
     asset.assetType = assetValues.tokenId.mod(BigInt.fromI32(2))
@@ -378,29 +381,82 @@ export function getOrCreateAsset(
 
     log.info('Asset Created. ID {}', [id])
 
-    assetPool.total = assetPool.total.plus(ONE_BI)
-    assetPool.totalSupply = assetPool.totalSupply.plus(assetValues.totalSupply)
-    assetPool.amountTotal = assetPool.amountTotal.plus(price)
-    assetPool.minimumPriceTotal = assetPool.minimumPriceTotal.plus(
+    pool.total = pool.total.plus(ONE_BI)
+    pool.totalSupply = pool.totalSupply.plus(assetValues.totalSupply)
+    pool.amountTotal = pool.amountTotal.plus(tx.value)
+    pool.minimumPriceTotal = pool.minimumPriceTotal.plus(
       assetValues.minimumPrice
     )
-    assetPool.save()
+    pool.save()
 
-    log.debug('Asset Pool Update. ID {}, Count {}, Amount {}', [
-      assetPool.id,
-      assetPool.total.toHex(),
-      assetPool.amountTotal.toHex()
-    ])
+    log.debug(
+      'Asset Pool Update. ID {}, Total {}, Total Supply {}, Amount {}',
+      [
+        pool.id,
+        pool.total.toHex(),
+        pool.totalSupply.toHex(),
+        pool.amountTotal.toHex()
+      ]
+    )
 
-    const statistic = getOrCreateStatistic()
     statistic.totalAssets = statistic.totalAssets.plus(ONE_BI)
-    statistic.totalAssetsAmount = statistic.totalAssetsAmount.plus(price)
+    statistic.totalAssetsAmount = statistic.totalAssetsAmount.plus(tx.value)
     statistic.totalAssetsMinimumPrice = statistic.totalAssetsMinimumPrice.plus(
       assetValues.minimumPrice
     )
     statistic.save()
   }
   return asset as Asset
+}
+
+export function getOrCreateAssetOrder(
+  pool: AssetPool,
+  asset: Asset,
+  block: ethereum.Block,
+  tx: ethereum.Transaction,
+  logIndex: BigInt
+): AssetOrder {
+  const id = asset.id.concat('-').concat(tx.hash.toHex())
+  const statistic = getOrCreateStatistic()
+  let order = AssetOrder.load(id)
+  if (order === null) {
+    order = new AssetOrder(id)
+    order.host = asset.host
+    order.asset = asset.id
+    order.txHash = tx.hash
+    order.value = tx.value
+    order.from = tx.from
+    order.to = tx.to ? tx.to! : ADDRESS_ZERO
+    order.blockId = block.hash.toHex()
+    order.blockNumber = block.number
+    order.blockTimestamp = block.timestamp
+    order.logIndex = logIndex
+    order.save()
+    log.info('Asset Order Created. ID {}', [id])
+
+    pool.orderTotal = pool.orderTotal.plus(ONE_BI)
+    pool.orderAmountTotal = pool.orderAmountTotal.plus(tx.value)
+    pool.save()
+    log.debug('Asset Pool Update. ID {}, Order Total {}, Order Amount {}', [
+      pool.id,
+      pool.orderTotal.toHex(),
+      pool.orderAmountTotal.toHex()
+    ])
+
+    statistic.totalAssetsOrder = statistic.totalAssetsOrder.plus(ONE_BI)
+    statistic.totalAssetsOrderAmount = statistic.totalAssetsOrderAmount.plus(
+      tx.value
+    )
+    statistic.save()
+    log.debug(
+      'Statistic Update. Total Assets Order {}, Total Assets Order Amount {}',
+      [
+        statistic.totalAssetsOrder.toHex(),
+        statistic.totalAssetsOrderAmount.toHex()
+      ]
+    )
+  }
+  return order as AssetOrder
 }
 
 export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
