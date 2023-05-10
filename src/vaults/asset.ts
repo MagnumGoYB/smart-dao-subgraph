@@ -56,6 +56,8 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
     asset.save()
 
     pool.amountTotal = pool.amountTotal.plus(event.transaction.value)
+    pool.orderTotal = pool.orderTotal.plus(ONE_BI)
+    pool.orderAmountTotal = pool.orderAmountTotal.plus(event.transaction.value)
     pool.save()
 
     log.info('Asset Transferred. Asset Address {}, ID {}, From {}, To {}', [
@@ -64,6 +66,12 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
       event.params.from.toHex(),
       event.params.to.toHex()
     ])
+
+    statistic.totalAssetsOrder = statistic.totalAssetsOrder.plus(ONE_BI)
+    statistic.totalAssetsOrderAmount = statistic.totalAssetsOrderAmount.plus(
+      event.transaction.value
+    )
+    statistic.save()
   }
 
   if (
@@ -170,6 +178,10 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       asset.save()
 
       pool.amountTotal = pool.amountTotal.plus(event.transaction.value)
+      pool.orderTotal = pool.orderTotal.plus(ONE_BI)
+      pool.orderAmountTotal = pool.orderAmountTotal.plus(
+        event.transaction.value
+      )
       pool.save()
 
       log.info(
@@ -181,6 +193,12 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
           event.params.to.toHex()
         ]
       )
+
+      statistic.totalAssetsOrder = statistic.totalAssetsOrder.plus(ONE_BI)
+      statistic.totalAssetsOrderAmount = statistic.totalAssetsOrderAmount.plus(
+        event.transaction.value
+      )
+      statistic.save()
 
       getOrCreateAssetOrder(
         pool,

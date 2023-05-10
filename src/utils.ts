@@ -417,7 +417,6 @@ export function getOrCreateAssetOrder(
   logIndex: BigInt
 ): AssetOrder {
   const id = asset.id.concat('-').concat(tx.hash.toHex())
-  const statistic = getOrCreateStatistic()
   let order = AssetOrder.load(id)
   if (order === null) {
     order = new AssetOrder(id)
@@ -434,29 +433,8 @@ export function getOrCreateAssetOrder(
     order.logIndex = logIndex
     order.save()
     log.info('Asset Order Created. ID {}', [id])
-
-    pool.orderTotal = pool.orderTotal.plus(ONE_BI)
-    pool.orderAmountTotal = pool.orderAmountTotal.plus(tx.value)
-    pool.save()
-    log.debug('Asset Pool Update. ID {}, Order Total {}, Order Amount {}', [
-      pool.id,
-      pool.orderTotal.toHex(),
-      pool.orderAmountTotal.toHex()
-    ])
-
-    statistic.totalAssetsOrder = statistic.totalAssetsOrder.plus(ONE_BI)
-    statistic.totalAssetsOrderAmount = statistic.totalAssetsOrderAmount.plus(
-      tx.value
-    )
-    statistic.save()
-    log.debug(
-      'Statistic Update. Total Assets Order {}, Total Assets Order Amount {}',
-      [
-        statistic.totalAssetsOrder.toHex(),
-        statistic.totalAssetsOrderAmount.toHex()
-      ]
-    )
   }
+
   return order as AssetOrder
 }
 
