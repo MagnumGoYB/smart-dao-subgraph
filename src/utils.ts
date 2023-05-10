@@ -423,6 +423,7 @@ export function getOrCreateAssetOrder(
     order = new AssetOrder(id)
     order.host = asset.host
     order.asset = asset.id
+    order.assetPool = pool.id
     order.txHash = tx.hash
     order.value = tx.value
     order.from = tx.from

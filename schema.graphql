@@ -277,6 +277,8 @@ type AssetPool @entity {
   host: DAO!
   "Assets"
   assets: [Asset!] @derivedFrom(field: "assetPool")
+  "Asset Orders"
+  assetOrders: [AssetOrder!] @derivedFrom(field: "assetPool")
   "Assets Total"
   total: BigInt!
   "Assets Total Supply"
@@ -368,6 +370,8 @@ type AssetOrder @entity {
   host: DAO!
   "Belong Asset"
   asset: Asset!
+  "Belong Asset Pool"
+  assetPool: AssetPool!
   "Tx Hash"
   txHash: Bytes!
   "Tx Value"
