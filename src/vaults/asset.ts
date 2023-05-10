@@ -2,6 +2,7 @@ import { Address, dataSource, log } from '@graphprotocol/graph-ts'
 
 import {
   ADDRESS_ZERO,
+  ONE_BI,
   getOrCreateAsset,
   getOrCreateAssetPool,
   getOrCreateStatistic
@@ -110,7 +111,8 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
       Address.fromString(DAOAddress),
       type
     )
-    assetPool.count = assetPool.count.minus(event.params.value)
+    assetPool.total = assetPool.total.minus(ONE_BI)
+    assetPool.totalSupply = assetPool.totalSupply.minus(event.params.value)
     assetPool.amountTotal = assetPool.amountTotal.minus(event.transaction.value)
     assetPool.minimumPriceTotal = assetPool.minimumPriceTotal.minus(
       asset.minimumPrice
@@ -238,7 +240,10 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
         Address.fromString(DAOAddress),
         type
       )
-      assetPool.count = assetPool.count.minus(event.params.values[i])
+      assetPool.total = assetPool.total.minus(ONE_BI)
+      assetPool.totalSupply = assetPool.totalSupply.minus(
+        event.params.values[i]
+      )
       assetPool.amountTotal = assetPool.amountTotal.minus(
         event.transaction.value
       )

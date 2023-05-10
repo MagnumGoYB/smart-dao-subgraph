@@ -137,7 +137,8 @@ export function getOrCreateAssetPool(
   if (assetPool === null) {
     assetPool = new AssetPool(id)
     assetPool.host = DAOAddress.toHex()
-    assetPool.count = ZERO_BI
+    assetPool.total = ZERO_BI
+    assetPool.totalSupply = ZERO_BI
     assetPool.amountTotal = ZERO_BI
     assetPool.minimumPriceTotal = ZERO_BI
     assetPool.type = type
@@ -377,7 +378,8 @@ export function getOrCreateAsset(
 
     log.info('Asset Created. ID {}', [id])
 
-    assetPool.count = assetPool.count.plus(ONE_BI)
+    assetPool.total = assetPool.total.plus(ONE_BI)
+    assetPool.totalSupply = assetPool.totalSupply.plus(assetValues.totalSupply)
     assetPool.amountTotal = assetPool.amountTotal.plus(price)
     assetPool.minimumPriceTotal = assetPool.minimumPriceTotal.plus(
       assetValues.minimumPrice
@@ -386,7 +388,7 @@ export function getOrCreateAsset(
 
     log.debug('Asset Pool Update. ID {}, Count {}, Amount {}', [
       assetPool.id,
-      assetPool.count.toHex(),
+      assetPool.total.toHex(),
       assetPool.amountTotal.toHex()
     ])
 

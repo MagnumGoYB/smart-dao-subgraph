@@ -273,8 +273,10 @@ type AssetPool @entity {
   host: DAO!
   "Assets"
   assets: [Asset!] @derivedFrom(field: "assetPool")
-  "Assets Count"
-  count: BigInt!
+  "Assets Total"
+  total: BigInt!
+  "Assets Total Supply"
+  totalSupply: BigInt!
   "Asset Total Amount"
   amountTotal: BigInt!
   "Asset Minimum Price Total"
