@@ -95,12 +95,12 @@ templates:
       eventHandlers:
         - event: Created(uint256)
           handler: handleCreated
-        # - event: Vote(indexed uint256,uint256,int256)
-        #   handler: handleVote
-        # - event: Close(indexed uint256)
-        #   handler: handleClose
-        # - event: Execute(indexed uint256)
-        #   handler: handleExecute
+        - event: Vote(indexed uint256,uint256,int256)
+          handler: handleVote
+        - event: Close(indexed uint256)
+          handler: handleClose
+        - event: Execute(indexed uint256)
+          handler: handleExecute
 
   - name: LedgerInitializable
     kind: ethereum/contract

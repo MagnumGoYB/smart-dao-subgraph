@@ -80,7 +80,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   ) {
     // Asset destroyed
     asset.owner = ADDRESS_ZERO.toHex()
-    asset.state = 'Disable'
+    asset.destroyed = true
     asset.totalSupply = asset.totalSupply.minus(event.params.value)
     asset.save()
 
@@ -226,7 +226,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       )
 
       asset.owner = ADDRESS_ZERO.toHex()
-      asset.state = 'Disable'
+      asset.destroyed = true
       asset.totalSupply = asset.totalSupply.minus(event.params.values[i])
       asset.save()
 

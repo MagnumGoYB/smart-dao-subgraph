@@ -12,6 +12,14 @@ type Statistic @entity {
   totalAccounts: BigInt!
   "Total Proposals"
   totalProposals: BigInt!
+  "Total Agreed Proposals"
+  totalAgreedProposals: BigInt!
+  "Total Closed Proposals"
+  totalClosedProposals: BigInt!
+  "Total Executed Proposals"
+  totalExecutedProposals: BigInt!
+  "Total Votes"
+  totalVotes: BigInt!
   "Total Assets"
   totalAssets: BigInt!
   "Total Destroyed Assets"
@@ -22,10 +30,14 @@ type Statistic @entity {
   totalDestroyedAssetsAmount: BigInt!
   "Total Asset Minimum Price"
   totalAssetsMinimumPrice: BigInt!
-  "TOtal Asset Order"
+  "Total Asset Order"
   totalAssetsOrder: BigInt!
-  "Asset Asset Order Amount"
+  "Total Asset Order Amount"
   totalAssetsOrderAmount: BigInt!
+  "Total Ledger Asset Income"
+  totalLedgerAssetIncome: BigInt!
+  "Total Ledger Asset Income Amount"
+  totalLedgerAssetIncomeAmount: BigInt!
 }
 
 """
@@ -134,8 +146,16 @@ type VotePool @entity {
   host: DAO!
   "Proposals"
   proposals: [Proposal!] @derivedFrom(field: "votePool")
-  "Proposals Count"
-  count: BigInt!
+  "Proposals Total"
+  proposalTotal: BigInt!
+  "Proposals Agreed Total"
+  proposalAgreedTotal: BigInt!
+  "Proposals Closed Total"
+  proposalClosedTotal: BigInt!
+  "Proposals Executed Total"
+  proposalExecutedTotal: BigInt!
+  "Voted Total"
+  votedTotal: BigInt!
 }
 
 """
@@ -184,10 +204,29 @@ type Proposal @entity {
   isClose: Boolean
   "Is Executed"
   isExecuted: Boolean
-  "Time"
-  time: BigInt
   "Modify Time"
   modifyTime: BigInt
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
+}
+
+type Vote @entity {
+  "ID (hash) - (Proposal ID).concat('-').concat(txHash)"
+  id: ID!
+  "Belong DAO"
+  host: DAO!
+  "Belong Vote Pool"
+  votePool: VotePool!
+  "Belong Proposal"
+  proposal: Proposal!
+  "Member"
+  owner: Member!
+  "Vote Power"
+  votes: BigInt!
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -208,6 +247,10 @@ type LedgerPool @entity {
   ledgers: [Ledger!] @derivedFrom(field: "ledgerPool")
   "Ledgers Count"
   count: BigInt!
+  "Asset Income Total"
+  assetIncomeTotal: BigInt!
+  "Asset Income Amount"
+  assetIncomeAmount: BigInt!
 }
 
 enum LedgerType {
@@ -258,8 +301,8 @@ type Ledger @entity {
   member: BigInt
   "Enable State"
   state: State!
-  # assetIncome_id: number;
-  # assetIncome?: LedgerAssetIncome;
+  "Asset Income"
+  assetIncome: LedgerAssetIncome
 }
 
 enum AssetPoolType {
@@ -313,7 +356,7 @@ enum Selling {
 Asset
 """
 type Asset @entity {
-  "ID (hash) - (DAO Address).concat('-').concat(tokenId)"
+  "ID (hash) - (Address).concat('-').concat(tokenId)"
   id: ID!
   "DAO Host"
   host: DAO!
@@ -335,6 +378,8 @@ type Asset @entity {
   owner: Account
   "State"
   state: State!
+  "Destroyed State"
+  destroyed: Boolean!
   "Selling State"
   selling: Selling!
   "Sell Price"
@@ -382,6 +427,45 @@ type AssetOrder @entity {
   to: Bytes!
   "Log Index"
   logIndex: BigInt!
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
+}
+
+enum SaleType {
+  kDefault
+  kFirst
+  kSecond
+}
+
+type LedgerAssetIncome @entity {
+  "ID (hash) - (Asset ID).concat('-').concat(Ledger ID).concat('-').concat(txHash)"
+  id: ID!
+  "Belong Asset"
+  asset: Asset!
+  "Belong Ledger"
+  ledger: Ledger!
+  "Belong Ledger Pool"
+  ledgerPool: LedgerPool!
+  "Tx Hash"
+  txHash: Bytes!
+  "DAO Host"
+  host: DAO!
+  "Source Address"
+  source: Bytes!
+  "Balance"
+  balance: BigInt!
+  "Price"
+  price: BigInt!
+  "From Address"
+  from: Bytes!
+  "To Address"
+  to: Bytes!
+  "Sale Type"
+  saleType: SaleType!
   "Block ID (hash)"
   blockId: ID!
   "Block Number"

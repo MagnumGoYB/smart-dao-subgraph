@@ -7,11 +7,13 @@ import {
   AssetPool,
   DAO,
   Ledger,
+  LedgerAssetIncome,
   LedgerPool,
   Member,
   MemberPool,
   Proposal,
   Statistic,
+  Vote,
   VotePool
 } from '../generated/schema'
 import {
@@ -50,6 +52,12 @@ export function getOrCreateStatistic(): Statistic {
     statistic.totalAssetsMinimumPrice = ZERO_BI
     statistic.totalAssetsOrder = ZERO_BI
     statistic.totalAssetsOrderAmount = ZERO_BI
+    statistic.totalLedgerAssetIncome = ZERO_BI
+    statistic.totalLedgerAssetIncomeAmount = ZERO_BI
+    statistic.totalAgreedProposals = ZERO_BI
+    statistic.totalClosedProposals = ZERO_BI
+    statistic.totalExecutedProposals = ZERO_BI
+    statistic.totalVotes = ZERO_BI
   }
   return statistic as Statistic
 }
@@ -107,7 +115,11 @@ export function getOrCreateVotePool(
   if (votePool === null) {
     votePool = new VotePool(id)
     votePool.host = DAOAddress.toHex()
-    votePool.count = ZERO_BI
+    votePool.votedTotal = ZERO_BI
+    votePool.proposalTotal = ZERO_BI
+    votePool.proposalAgreedTotal = ZERO_BI
+    votePool.proposalClosedTotal = ZERO_BI
+    votePool.proposalExecutedTotal = ZERO_BI
     votePool.save()
     log.info('Vote Pool Created. ID {}', [id])
   }
@@ -124,6 +136,8 @@ export function getOrCreateLedgerPool(
     ledgerPool = new LedgerPool(id)
     ledgerPool.host = DAOAddress.toHex()
     ledgerPool.count = ZERO_BI
+    ledgerPool.assetIncomeAmount = ZERO_BI
+    ledgerPool.assetIncomeTotal = ZERO_BI
     ledgerPool.save()
     log.info('Ledger Pool Created. ID {}', [id])
   }
@@ -200,24 +214,20 @@ export function getOrCreateMember(
   return member as Member
 }
 
-export function getOrCreateVotePoolProposal(
+export function getOrCreateVoteProposal(
   id: BigInt,
+  pool: VotePool,
   address: Address,
   DAOAddress: Address,
   block: ethereum.Block
 ): Proposal {
-  const dao = getOrCreateDAO(DAOAddress)
-  const votePool = getOrCreateVotePool(address, DAOAddress)
-  dao.votePool = votePool.id
-  dao.save()
-
   const proposalId = id.toHex()
+  const info = fetchVoteProposalValue(id, address, DAOAddress)
   let voteProposal = Proposal.load(proposalId)
   if (voteProposal === null) {
     voteProposal = new Proposal(proposalId)
-    voteProposal.host = dao.id
-    voteProposal.votePool = votePool.id
-    const info = fetchVoteProposalValue(id, address, DAOAddress)
+    voteProposal.host = DAOAddress.toHex()
+    voteProposal.votePool = pool.id
     voteProposal.name = info.name
     voteProposal.description = info.description
     voteProposal.isAnonymous = info.isAnonymous
@@ -232,6 +242,11 @@ export function getOrCreateVotePoolProposal(
     voteProposal.target = info.target.map<Bytes>((target: Bytes) => target)
     voteProposal.data = info.data
     voteProposal.passRate = info.passRate
+    voteProposal.blockId = block.hash.toHex()
+    voteProposal.blockNumber = block.number
+    voteProposal.blockTimestamp = block.timestamp
+    log.info('Vote Proposal Created. ID {}', [proposalId])
+  } else {
     voteProposal.loopCount = info.loopCount
     voteProposal.loopTime = info.loopTime
     voteProposal.voteTotal = info.voteTotal
@@ -240,23 +255,47 @@ export function getOrCreateVotePoolProposal(
     voteProposal.isAgree = info.isAgree
     voteProposal.isClose = info.isClose
     voteProposal.isExecuted = info.isExecuted
-    voteProposal.time = block.timestamp
     voteProposal.modifyTime = block.timestamp
-    voteProposal.blockId = block.hash.toHex()
-    voteProposal.blockNumber = block.number
-    voteProposal.blockTimestamp = block.timestamp
-    voteProposal.save()
-    log.info('Vote Proposal Created. ID {}', [proposalId])
+    log.info('Vote Proposal Update. ID {}', [proposalId])
 
-    votePool.count = votePool.count.plus(ONE_BI)
-    votePool.save()
+    if (info.isAgree) {
+      pool.proposalAgreedTotal = pool.proposalAgreedTotal.plus(ONE_BI)
+      pool.save()
 
-    const statistic = getOrCreateStatistic()
-    statistic.totalProposals = statistic.totalProposals.plus(ONE_BI)
-    statistic.save()
+      const statistic = getOrCreateStatistic()
+      statistic.totalAgreedProposals =
+        statistic.totalAgreedProposals.plus(ONE_BI)
+      statistic.save()
+    }
   }
+  voteProposal.save()
 
   return voteProposal as Proposal
+}
+
+export function getOrCreateVote(
+  pool: VotePool,
+  proposal: Proposal,
+  memberTokenId: BigInt,
+  votes: BigInt,
+  block: ethereum.Block,
+  tx: ethereum.Transaction
+): Vote {
+  const id = proposal.id.concat('-').concat(tx.hash.toHex())
+  let vote = Vote.load(id)
+  if (vote === null) {
+    vote = new Vote(id)
+    vote.host = pool.host
+    vote.proposal = proposal.id
+    vote.votePool = pool.id
+    vote.blockId = block.hash.toHex()
+    vote.blockNumber = block.number
+    vote.blockTimestamp = block.timestamp
+    vote.owner = pool.host.concat('-').concat(memberTokenId.toHex())
+    vote.votes = votes
+    vote.save()
+  }
+  return vote as Vote
 }
 
 /**
@@ -351,19 +390,16 @@ export function getOrCreateAsset(
   tx: ethereum.Transaction
 ): Asset {
   const assetValues = fetchAssetShellValue(address, tokenId)
-  const id = address.toHex().concat('-').concat(assetValues.tokenId.toHex())
+  const id = address.toHex().concat('-').concat(tokenId.toHex())
   const statistic = getOrCreateStatistic()
   let asset = Asset.load(id)
   if (asset === null) {
     asset = new Asset(id)
     asset.host = pool.host
-    asset.token = assetValues.token
-    asset.tokenId = assetValues.tokenId
+    asset.token = address
+    asset.tokenId = tokenId
     asset.totalSupply = assetValues.totalSupply
     asset.uri = assetValues.uri
-    asset.name = assetValues.name
-    asset.description = assetValues.description
-    asset.externalLink = assetValues.externalLink
     asset.blockId = block.hash.toHex()
     asset.blockNumber = block.number
     asset.blockTimestamp = block.timestamp
@@ -374,9 +410,10 @@ export function getOrCreateAsset(
     asset.sellPrice = tx.value
     asset.state = 'Enable'
     asset.minimumPrice = assetValues.minimumPrice
-    asset.assetType = assetValues.tokenId.mod(BigInt.fromI32(2))
+    asset.assetType = tokenId.mod(BigInt.fromI32(2))
       ? 'ERC1155'
       : 'ERC1155_Single'
+    asset.destroyed = false
     asset.save()
 
     log.info('Asset Created. ID {}', [id])
@@ -436,6 +473,60 @@ export function getOrCreateAssetOrder(
   }
 
   return order as AssetOrder
+}
+
+export function getOrCreateLedgerAssetIncome(
+  pool: LedgerPool,
+  ledger: Ledger,
+  asset: Asset,
+  source: Address,
+  balance: BigInt,
+  price: BigInt,
+  saleType: BigInt,
+  block: ethereum.Block,
+  tx: ethereum.Transaction
+): LedgerAssetIncome {
+  const id = asset.id
+    .concat('-')
+    .concat(ledger.id)
+    .concat('-')
+    .concat(tx.hash.toHex())
+  let income = LedgerAssetIncome.load(id)
+  if (income === null) {
+    income = new LedgerAssetIncome(id)
+    income.host = asset.host
+    income.asset = asset.id
+    income.ledger = ledger.id
+    income.ledgerPool = pool.id
+    income.txHash = tx.hash
+    income.from = tx.from
+    income.to = tx.to ? tx.to! : ADDRESS_ZERO
+    income.source = source
+    income.balance = balance
+    income.price = price
+    income.blockId = block.hash.toHex()
+    income.blockNumber = block.number
+    income.blockTimestamp = block.timestamp
+    const t = saleType.toU32()
+    const kDefault = BigInt.fromI32(0).toU32()
+    const kFirst = BigInt.fromI32(1).toU32()
+    const kSecond = BigInt.fromI32(2).toU32()
+    switch (t) {
+      case kDefault:
+        income.saleType = 'kDefault'
+        break
+      case kFirst:
+        income.saleType = 'kFirst'
+        break
+      case kSecond:
+        income.saleType = 'kSecond'
+        break
+    }
+    income.save()
+    log.info('Ledger Asset Income Created. ID {}', [id])
+  }
+
+  return income as LedgerAssetIncome
 }
 
 export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {

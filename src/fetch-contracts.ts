@@ -56,8 +56,6 @@ export class AssetInfo {
   uri: string
   baseURI: string
   totalSupply: BigInt
-  token: Address
-  tokenId: BigInt
   minimumPrice: BigInt
   externalLink: string
 }
@@ -156,7 +154,6 @@ export function fetchAssetShellValue(
   tokenId: BigInt
 ): AssetInfo {
   const contract = AssetShellContract.bind(address)
-  const meta = contract.assetMeta(tokenId)
 
   return {
     uri: contract.uri(tokenId),
@@ -164,8 +161,6 @@ export function fetchAssetShellValue(
     description: contract.description(),
     baseURI: contract.baseURI(),
     totalSupply: contract.totalSupply(tokenId),
-    token: meta.token,
-    tokenId: meta.tokenId,
     minimumPrice: contract.minimumPrice(tokenId),
     externalLink: contract.external_link()
   } as AssetInfo
