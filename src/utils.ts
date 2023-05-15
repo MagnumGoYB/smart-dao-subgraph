@@ -257,16 +257,6 @@ export function getOrCreateVoteProposal(
     voteProposal.isExecuted = info.isExecuted
     voteProposal.modifyTime = block.timestamp
     log.info('Vote Proposal Update. ID {}', [proposalId])
-
-    if (info.isAgree) {
-      pool.proposalAgreedTotal = pool.proposalAgreedTotal.plus(ONE_BI)
-      pool.save()
-
-      const statistic = getOrCreateStatistic()
-      statistic.totalAgreedProposals =
-        statistic.totalAgreedProposals.plus(ONE_BI)
-      statistic.save()
-    }
   }
   voteProposal.save()
 
@@ -294,6 +284,16 @@ export function getOrCreateVote(
     vote.owner = pool.host.concat('-').concat(memberTokenId.toHex())
     vote.votes = votes
     vote.save()
+
+    if (proposal.isAgree) {
+      pool.proposalAgreedTotal = pool.proposalAgreedTotal.plus(ONE_BI)
+      pool.save()
+
+      const statistic = getOrCreateStatistic()
+      statistic.totalAgreedProposals =
+        statistic.totalAgreedProposals.plus(ONE_BI)
+      statistic.save()
+    }
   }
   return vote as Vote
 }
