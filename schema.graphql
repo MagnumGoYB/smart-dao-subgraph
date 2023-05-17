@@ -162,8 +162,10 @@ type VotePool @entity {
 Vote Proposal
 """
 type Proposal @entity {
-  "ID (hash)"
+  "ID (hash) - DAOAddress.concat('-').concat(id)"
   id: ID!
+  "Proposal Number"
+  number: Int!
   "Belong DAO"
   host: DAO!
   "Belong Vote Pool"

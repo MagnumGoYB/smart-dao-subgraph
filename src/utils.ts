@@ -221,11 +221,12 @@ export function getOrCreateVoteProposal(
   DAOAddress: Address,
   block: ethereum.Block
 ): Proposal {
-  const proposalId = id.toHex()
+  const proposalId = DAOAddress.toHex().concat('-').concat(id.toHex())
   const info = fetchVoteProposalValue(id, address, DAOAddress)
   let voteProposal = Proposal.load(proposalId)
   if (voteProposal === null) {
     voteProposal = new Proposal(proposalId)
+    voteProposal.number = 0
     voteProposal.host = DAOAddress.toHex()
     voteProposal.votePool = pool.id
     voteProposal.name = info.name

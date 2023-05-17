@@ -31,13 +31,16 @@ export function handleCreated(event: CreatedEvent): void {
     DAOAddress
   ])
 
-  getOrCreateVoteProposal(
+  const proposal = getOrCreateVoteProposal(
     event.params.id,
     pool,
     dataSource.address(),
     Address.fromString(DAOAddress),
     event.block
   )
+
+  proposal.number = pool.proposalTotal.toI32()
+  proposal.save()
 
   pool.proposalTotal = pool.proposalTotal.plus(ONE_BI)
   pool.save()
