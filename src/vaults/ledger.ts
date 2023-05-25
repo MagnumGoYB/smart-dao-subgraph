@@ -11,8 +11,6 @@ import {
 } from './../../generated/templates/LedgerInitializable/Ledger'
 import {
   ONE_BI,
-  getOrCreateAsset,
-  getOrCreateAssetPool,
   getOrCreateDAO,
   getOrCreateLedger,
   getOrCreateLedgerAssetIncome,
@@ -141,7 +139,7 @@ export function handleRelease(event: ReleaseEvent): void {
 
 export function handleAssetIncome(event: AssetIncomeEvent): void {
   log.info(
-    'DAO Ledger AssetIncome. DAO {}, Address {}, Token {}, TokenId {}, Source {}, To {}, Balance {}, Price {}, SaleType {}',
+    'DAO Ledger AssetIncome. DAO {}, Address {}, Token {}, TokenId {}, Source {}, To {}, Balance {}, Price {}',
     [
       DAOAddress,
       dataSource.address().toHex(),
@@ -150,8 +148,7 @@ export function handleAssetIncome(event: AssetIncomeEvent): void {
       event.params.source.toHex(),
       event.params.to.toHex(),
       event.params.balance.toHex(),
-      event.params.price.toHex(),
-      BigInt.fromI32(event.params.saleType).toHex()
+      event.params.price.toHex()
     ]
   )
   const statistic = getOrCreateStatistic()
@@ -162,7 +159,7 @@ export function handleAssetIncome(event: AssetIncomeEvent): void {
     Address.fromString(DAOAddress),
     event.block,
     {
-      from: null,
+      from: event.params.from,
       to: event.params.source,
       balance: event.params.balance,
       member: null,
@@ -205,6 +202,10 @@ export function handleAssetIncome(event: AssetIncomeEvent): void {
           event.params.balance
         )
         ledgerPool.save()
+
+        asset.soldTime = event.block.timestamp
+        asset.selling = 'UnsellOrUnknown'
+        asset.save()
       }
     }
   }

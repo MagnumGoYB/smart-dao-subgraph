@@ -51,13 +51,12 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   ) {
     // Asset transferred
     asset.selling = 'Opensea'
+    asset.sellingTime = event.block.timestamp
     asset.sellPrice = event.transaction.value
     asset.owner = event.params.to.toHex()
     asset.save()
 
     pool.amountTotal = pool.amountTotal.plus(event.transaction.value)
-    pool.orderTotal = pool.orderTotal.plus(ONE_BI)
-    pool.orderAmountTotal = pool.orderAmountTotal.plus(event.transaction.value)
     pool.save()
 
     log.info('Asset Transferred. Asset Address {}, ID {}, From {}, To {}', [
@@ -86,7 +85,6 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
 
     pool.total = pool.total.minus(ONE_BI)
     pool.totalSupply = pool.totalSupply.minus(event.params.value)
-    pool.amountTotal = pool.amountTotal.minus(event.transaction.value)
     pool.minimumPriceTotal = pool.minimumPriceTotal.minus(asset.minimumPrice)
     pool.save()
 
@@ -173,15 +171,12 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       )
 
       asset.selling = 'Opensea'
+      asset.sellingTime = event.block.timestamp
       asset.sellPrice = event.transaction.value
       asset.owner = event.params.to.toHex()
       asset.save()
 
       pool.amountTotal = pool.amountTotal.plus(event.transaction.value)
-      pool.orderTotal = pool.orderTotal.plus(ONE_BI)
-      pool.orderAmountTotal = pool.orderAmountTotal.plus(
-        event.transaction.value
-      )
       pool.save()
 
       log.info(
@@ -232,7 +227,6 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
 
       pool.total = pool.total.minus(ONE_BI)
       pool.totalSupply = pool.totalSupply.minus(event.params.values[i])
-      pool.amountTotal = pool.amountTotal.minus(event.transaction.value)
       pool.minimumPriceTotal = pool.minimumPriceTotal.minus(asset.minimumPrice)
       pool.save()
 

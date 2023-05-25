@@ -1,6 +1,5 @@
 import { Address, Bytes, log, BigInt } from '@graphprotocol/graph-ts'
 
-import { Asset } from '../generated/schema'
 import { AssetShell as AssetShellContract } from '../generated/templates/AssetInitializable/AssetShell'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
@@ -29,6 +28,10 @@ export class MemberInfo {
   votes: BigInt
 }
 
+export class MemberPoolInfo {
+  executor: BigInt
+}
+
 export class ProposalInfo {
   isAnonymous: boolean
   origin: string | null
@@ -50,14 +53,22 @@ export class ProposalInfo {
   isExecuted: boolean
 }
 
+export class VotePoolInfo {
+  lifespan: BigInt
+}
+
 export class AssetInfo {
-  name: string
-  description: string
   uri: string
-  baseURI: string
   totalSupply: BigInt
   minimumPrice: BigInt
+}
+
+export class AssetContractInfo {
+  name: string
+  description: string
+  baseURI: string
   externalLink: string
+  sellerFeeBasisPoints: BigInt
 }
 
 export class CreateLedgerParam {
@@ -86,6 +97,14 @@ export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
   } as DAOPrimaryInfo
 }
 
+export function fetchMemberPoolValue(address: Address): MemberPoolInfo {
+  const contract = MemberContract.bind(address)
+
+  return {
+    executor: contract.executor()
+  } as MemberPoolInfo
+}
+
 export function fetchMemberValue(
   address: Address,
   tokenId: BigInt
@@ -107,6 +126,13 @@ export function fetchMemberValue(
     image: info.image,
     votes: info.votes
   } as MemberInfo
+}
+
+export function fetchVotePoolValue(address: Address): VotePoolInfo {
+  const contract = VotePoolContract.bind(address)
+  return {
+    lifespan: contract.lifespan()
+  } as VotePoolInfo
 }
 
 export function fetchVoteProposalValue(
@@ -149,19 +175,24 @@ export function fetchVoteProposalValue(
   } as ProposalInfo
 }
 
-export function fetchAssetShellValue(
-  address: Address,
-  tokenId: BigInt
-): AssetInfo {
+export function fetchAssetValue(address: Address, tokenId: BigInt): AssetInfo {
   const contract = AssetShellContract.bind(address)
 
   return {
     uri: contract.uri(tokenId),
+    totalSupply: contract.totalSupply(tokenId),
+    minimumPrice: contract.minimumPrice(tokenId)
+  } as AssetInfo
+}
+
+export function fetchAssetShellValue(address: Address): AssetContractInfo {
+  const contract = AssetShellContract.bind(address)
+
+  return {
     name: contract.name(),
     description: contract.description(),
     baseURI: contract.baseURI(),
-    totalSupply: contract.totalSupply(tokenId),
-    minimumPrice: contract.minimumPrice(tokenId),
-    externalLink: contract.external_link()
-  } as AssetInfo
+    externalLink: contract.external_link(),
+    sellerFeeBasisPoints: contract.seller_fee_basis_points()
+  } as AssetContractInfo
 }

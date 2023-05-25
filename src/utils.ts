@@ -18,7 +18,10 @@ import {
 } from '../generated/schema'
 import {
   fetchAssetShellValue,
+  fetchAssetValue,
+  fetchMemberPoolValue,
   fetchMemberValue,
+  fetchVotePoolValue,
   fetchVoteProposalValue
 } from './fetch-contracts'
 
@@ -110,6 +113,7 @@ export function getOrCreateVotePool(
   address: Address,
   DAOAddress: Address
 ): VotePool {
+  const poolContract = fetchVotePoolValue(address)
   const id = address.toHex()
   let votePool = VotePool.load(id)
   if (votePool === null) {
@@ -120,6 +124,7 @@ export function getOrCreateVotePool(
     votePool.proposalAgreedTotal = ZERO_BI
     votePool.proposalClosedTotal = ZERO_BI
     votePool.proposalExecutedTotal = ZERO_BI
+    votePool.lifespan = poolContract.lifespan
     votePool.save()
     log.info('Vote Pool Created. ID {}', [id])
   }
@@ -149,6 +154,7 @@ export function getOrCreateAssetPool(
   DAOAddress: Address,
   type: string
 ): AssetPool {
+  const assetContract = fetchAssetShellValue(address)
   const id = address.toHex()
   let assetPool = AssetPool.load(id)
   if (assetPool === null) {
@@ -161,6 +167,7 @@ export function getOrCreateAssetPool(
     assetPool.orderTotal = ZERO_BI
     assetPool.orderAmountTotal = ZERO_BI
     assetPool.type = type
+    assetPool.tax = assetContract.sellerFeeBasisPoints
     assetPool.save()
     log.info('Asset Pool Created. ID {}', [id])
   }
@@ -174,15 +181,16 @@ export function getOrCreateMember(
   memberPoolAddress: Address
 ): Member {
   const memberValues = fetchMemberValue(memberPoolAddress, memberTokenId)
-
   let memberPool = getOrCreateMemberPool(memberPoolAddress, DAOAddress)
   memberPool.name = memberValues.baseName
   memberPool.save()
 
   let dao = getOrCreateDAO(DAOAddress)
-  dao.memberPool = memberPool.id
-  dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
-  dao.save()
+  if (dao.creator === null) {
+    dao.memberPool = memberPool.id
+    dao.creator = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+    dao.save()
+  }
 
   const account = getOrCreateAccount(accountAddress)
   dao.accounts = dao.accounts.concat([account.id])
@@ -327,14 +335,6 @@ export function getOrCreateLedger(
   let ledger = Ledger.load(id)
   if (ledger === null) {
     ledger = new Ledger(id)
-    ledger.host = dao.id
-    ledger.ledgerPool = ledgerPool.id
-    ledger.address = address
-    ledger.txHash = txHash
-    ledger.blockId = block.hash.toHex()
-    ledger.blockNumber = block.number
-    ledger.blockTimestamp = block.timestamp
-    ledger.type = 'Reserved'
     const t = type.toU32()
     const receive = BigInt.fromI32(1).toU32()
     const deposit = BigInt.fromI32(2).toU32()
@@ -345,6 +345,7 @@ export function getOrCreateLedger(
       case receive:
         ledger.target = params.from
         ledger.balance = params.balance
+        ledger.ref = params.from
         ledger.type = 'Receive'
         break
       case deposit:
@@ -352,32 +353,52 @@ export function getOrCreateLedger(
         ledger.balance = params.balance
         ledger.name = params.name
         ledger.description = params.description
+        ledger.ref = params.from
         ledger.type = 'Deposit'
         break
       case withdraw:
         ledger.target = params.to
         ledger.balance = params.balance
         ledger.description = params.description
+        ledger.ref = params.to
         ledger.type = 'Withdraw'
         break
       case release:
         ledger.target = params.to
         ledger.balance = params.balance
         ledger.member = params.member
+        ledger.ref = params.to
         ledger.type = 'Release'
         break
       case assetIncome:
         ledger.target = params.to
+        ledger.ref = params.from
         ledger.balance = params.balance
         ledger.type = 'AssetIncome'
         break
     }
-    ledger.state = 'Enable' // default state is "Enable"
-    ledger.save()
-    log.info('New Ledger ID {}, Type {}', [id, type.toHex()])
+    switch (t) {
+      case receive:
+      case deposit:
+      case withdraw:
+      case release:
+      case assetIncome:
+        ledger.host = dao.id
+        ledger.ledgerPool = ledgerPool.id
+        ledger.address = address
+        ledger.txHash = txHash
+        ledger.blockId = block.hash.toHex()
+        ledger.blockNumber = block.number
+        ledger.blockTimestamp = block.timestamp
+        ledger.state = 'Enable'
 
-    ledgerPool.count = ledgerPool.count.plus(ONE_BI)
-    ledgerPool.save()
+        ledger.save()
+        log.info('New Ledger ID {}, Type {}', [id, type.toHex()])
+
+        ledgerPool.count = ledgerPool.count.plus(ONE_BI)
+        ledgerPool.save()
+        break
+    }
   }
   return ledger as Ledger
 }
@@ -390,7 +411,7 @@ export function getOrCreateAsset(
   block: ethereum.Block,
   tx: ethereum.Transaction
 ): Asset {
-  const assetValues = fetchAssetShellValue(address, tokenId)
+  const assetValues = fetchAssetValue(address, tokenId)
   const id = address.toHex().concat('-').concat(tokenId.toHex())
   const statistic = getOrCreateStatistic()
   let asset = Asset.load(id)
@@ -471,6 +492,10 @@ export function getOrCreateAssetOrder(
     order.logIndex = logIndex
     order.save()
     log.info('Asset Order Created. ID {}', [id])
+
+    pool.orderTotal = pool.orderTotal.plus(ONE_BI)
+    pool.orderAmountTotal = pool.orderAmountTotal.plus(tx.value)
+    pool.save()
   }
 
   return order as AssetOrder
@@ -530,19 +555,14 @@ export function getOrCreateLedgerAssetIncome(
   return income as LedgerAssetIncome
 }
 
-export function setExecutor(DAOAddress: Address, memberTokenId: BigInt): void {
-  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
-  const member = Member.load(id)
-  if (member === null) {
-    log.warning('DAO Set Executor. Member ID {} Not Found', [id])
-    return
-  }
-  let dao = DAO.load(DAOAddress.toHex())
+export function setExecutor(DAOAddress: Address): void {
+  const dao = DAO.load(DAOAddress.toHex())
   if (dao === null) {
     log.warning('DAO Set Executor. DAO ID {} Not Found', [DAOAddress.toHex()])
     return
   }
-  dao.executor = member.id
+  const poolContract = fetchMemberPoolValue(Address.fromString(dao.memberPool!))
+  dao.executor = poolContract.executor.toHex()
   dao.save()
-  log.info('DAO Update Executor Success. Member ID {}', [member.id])
+  log.info('DAO Update Executor Success. {}', [dao.executor!])
 }

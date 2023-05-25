@@ -12,7 +12,7 @@ dataSources:
     source:
       address: '0x555309800BDDd188A5B51728d5611725d9bBad02'
       abi: DAOs
-      startBlock: 8248925
+      startBlock: 8860453
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -26,6 +26,10 @@ dataSources:
           file: ./abis/DAOs.json
         - name: DAO
           file: ./abis/DAO.json
+        - name: AssetShell
+          file: ./abis/AssetShell.json
+        - name: VotePool
+          file: ./abis/VotePool.json
       eventHandlers:
         - event: Created(indexed address)
           handler: handleCreated
@@ -128,7 +132,7 @@ templates:
           handler: handleWithdraw
         - event: Release(indexed uint256,indexed address,uint256)
           handler: handleRelease
-        - event: AssetIncome(indexed address,indexed uint256,indexed address,address,uint256,uint256,uint8)
+        - event: AssetIncome(indexed address,indexed uint256,indexed address,address,address,uint256,uint256,uint256,uint8)
           handler: handleAssetIncome
 
   - name: AssetInitializable

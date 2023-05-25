@@ -49,7 +49,7 @@ type DAO @entity {
   "Creator"
   creator: Member
   "Executor"
-  executor: Member
+  executor: String
   "Name"
   name: String
   "Mission"
@@ -144,6 +144,8 @@ type VotePool @entity {
   id: ID!
   "Belong DAO"
   host: DAO!
+  "Life Span"
+  lifespan: BigInt!
   "Proposals"
   proposals: [Proposal!] @derivedFrom(field: "votePool")
   "Proposals Total"
@@ -291,6 +293,8 @@ type Ledger @entity {
   description: String
   "Target Address"
   target: Bytes
+  "Ref Address"
+  ref: Bytes
   "Amount"
   balance: BigInt
   "Block ID (hash)"
@@ -338,6 +342,8 @@ type AssetPool @entity {
   orderAmountTotal: BigInt!
   "Type"
   type: AssetPoolType!
+  "Tax"
+  tax: BigInt
 }
 
 enum AssetType {
@@ -384,6 +390,10 @@ type Asset @entity {
   destroyed: Boolean!
   "Selling State"
   selling: Selling!
+  "Selling Time"
+  sellingTime: BigInt
+  "Sold Time"
+  soldTime: BigInt
   "Sell Price"
   sellPrice: BigInt!
   "Minimum Price"
