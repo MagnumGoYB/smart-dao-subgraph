@@ -1,7 +1,20 @@
-import { DataSourceContext, log } from '@graphprotocol/graph-ts'
+import {
+  DataSourceContext,
+  dataSource,
+  Address,
+  log
+} from '@graphprotocol/graph-ts'
 
 import {
-  ADDRESS_ZERO,
+  AssetInitializable,
+  DAOInitializable,
+  ERC20Initializable,
+  LedgerInitializable,
+  MemberInitializable,
+  VotePoolInitializable
+} from './../generated/templates'
+import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
+import {
   fetchDAOBasicValue,
   getOrCreateAssetPool,
   getOrCreateDAO,
@@ -9,14 +22,12 @@ import {
   getOrCreateMemberPool,
   getOrCreateVotePool
 } from './utils'
-import {
-  AssetInitializable,
-  DAOInitializable,
-  LedgerInitializable,
-  MemberInitializable,
-  VotePoolInitializable
-} from './../generated/templates'
-import { Created as CreatedEvent } from '../generated/DAOsFactory/DAOs'
+
+const goerliERC20Address: string[] = [
+  '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'
+]
+const goerliERC20Symbol: string[] = ['WETH']
+const network = dataSource.network()
 
 export function handleCreated(event: CreatedEvent): void {
   DAOInitializable.create(event.params.dao)
@@ -24,6 +35,17 @@ export function handleCreated(event: CreatedEvent): void {
 
   const context = new DataSourceContext()
   context.setString('DAOAddress', event.params.dao.toHex())
+
+  if (network == 'goerli') {
+    log.info('Network: {}', [network])
+    for (let i = 0; i < goerliERC20Address.length; i++) {
+      log.info('ERC-20 initializing. Index {}', [i.toString()])
+      const address = goerliERC20Address[i]
+      const symbol = goerliERC20Symbol[i]
+      log.info('ERC-20 initializing. Symobl {}, Address {}', [symbol, address])
+      ERC20Initializable.createWithContext(Address.fromString(address), context)
+    }
+  }
 
   const dao = getOrCreateDAO(event.params.dao)
   dao.accounts = []
@@ -38,6 +60,7 @@ export function handleCreated(event: CreatedEvent): void {
       daoBasicInfo.ledgerAddress.toHex()
     ])
 
+    dao.ledger = daoBasicInfo.ledgerAddress.toHex()
     dao.ledgerPool = getOrCreateLedgerPool(
       daoBasicInfo.ledgerAddress,
       event.params.dao
@@ -99,6 +122,9 @@ export function handleCreated(event: CreatedEvent): void {
   dao.mission = daoBasicInfo.mission
   dao.extend = daoBasicInfo.extend
   dao.image = daoBasicInfo.image
+  dao.asset = daoBasicInfo.originAssetAddress.toHex()
+  dao.vote = daoBasicInfo.votePoolAddress.toHex()
+  dao.member = daoBasicInfo.memberAddress.toHex()
   dao.votePool = getOrCreateVotePool(
     daoBasicInfo.votePoolAddress,
     event.params.dao

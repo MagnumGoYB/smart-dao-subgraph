@@ -60,12 +60,20 @@ type DAO @entity {
   image: String
   "Extend Data"
   extend: Bytes
+  "Member Contract Address"
+  member: String
   "Member Pool"
   memberPool: MemberPool
+  "Vote Contract Address"
+  vote: String
   "vote Pool"
   votePool: VotePool
+  "Ledger Contract Address"
+  ledger: String
   "Ledger Pool"
   ledgerPool: LedgerPool
+  "Asset Contract Address"
+  asset: String
   "Asset Pool"
   assetPool: [AssetPool!]
   "Block ID (hash)"
@@ -296,7 +304,7 @@ type Ledger @entity {
   "Ref Address"
   ref: Bytes
   "Amount"
-  balance: BigInt
+  amount: BigInt
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -309,6 +317,10 @@ type Ledger @entity {
   state: State!
   "Asset Income"
   assetIncome: LedgerAssetIncome
+  "ERC-20 Token Address"
+  erc20: Bytes
+  "ERC-20 Token Symbol"
+  symbol: String
 }
 
 enum AssetPoolType {
@@ -468,8 +480,8 @@ type LedgerAssetIncome @entity {
   host: DAO!
   "Source Address"
   source: Bytes!
-  "Balance"
-  balance: BigInt!
+  "Amount"
+  amount: BigInt!
   "Price"
   price: BigInt!
   "From Address"
@@ -477,11 +489,67 @@ type LedgerAssetIncome @entity {
   "To Address"
   to: Bytes!
   "Sale Type"
-  saleType: SaleType!
+  saleType: AssetPoolType!
+  "ERC-20 Token Address"
+  erc20: Bytes
+  "ERC-20 Token Symbol"
+  symbol: String
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
   blockNumber: BigInt!
   "Block Timestamp"
   blockTimestamp: BigInt!
+}
+
+type AssetTxRecord @entity {
+  "ID (hash) - (Asset Address).concat('-').concat(txHash)"
+  id: ID!
+  "ERC-1155 Token Address"
+  token: Bytes!
+  "ERC-1155 Token ID"
+  tokenId: BigInt!
+  "DAO Host"
+  host: DAO!
+  "Belong Asset"
+  asset: Asset!
+  "Belong Asset Pool"
+  assetPool: AssetPool!
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Tx Hash"
+  txHash: Bytes!
+  "Tx Value"
+  value: BigInt!
+  "From Address"
+  from: Bytes!
+  "To Address"
+  to: Bytes!
+}
+
+type LedgerBalance @entity {
+  "ID (hash) - (Ledger ID).concat('-').concat(ERC-20 Token Address)"
+  id: ID!
+  "DAO Host"
+  host: DAO!
+  "Belong Ledger"
+  ledger: Ledger!
+  "ERC-20 Token Address"
+  erc20: Bytes!
+  "ERC-20 Token Symbol"
+  symbol: String
+  "ERC-20 Token Name"
+  name: String
+  "Balance"
+  value: BigInt!
+  "Income"
+  income: BigInt
+  "Expenditure"
+  expenditure: BigInt
+  "Items"
+  items: BigInt!
+  "Block Timestamp"
+  time: BigInt!
 }

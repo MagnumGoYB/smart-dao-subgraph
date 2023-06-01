@@ -352,19 +352,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "unlockOperator",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "uint256",
@@ -387,7 +374,7 @@
       "inputs": [
         {
           "internalType": "contract IDAOs",
-          "name": "daos",
+          "name": "daos_",
           "type": "address"
         },
         {
@@ -416,11 +403,6 @@
               "internalType": "bytes",
               "name": "extend",
               "type": "bytes"
-            },
-            {
-              "internalType": "address",
-              "name": "unlockOperator",
-              "type": "address"
             }
           ],
           "internalType": "struct DAO.InitDAOArgs",
@@ -429,7 +411,7 @@
         },
         {
           "internalType": "address",
-          "name": "root",
+          "name": "root_",
           "type": "address"
         },
         {
@@ -439,24 +421,11 @@
         },
         {
           "internalType": "address",
-          "name": "member",
+          "name": "member_",
           "type": "address"
         }
       ],
       "name": "initDAO",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "addr",
-          "type": "address"
-        }
-      ],
-      "name": "setUnlockOperator",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

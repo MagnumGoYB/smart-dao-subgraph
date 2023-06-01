@@ -88,15 +88,11 @@
           "internalType": "address",
           "name": "AssetShell",
           "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "Share",
-          "type": "address"
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -109,7 +105,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -171,11 +168,6 @@
               "internalType": "address",
               "name": "AssetShell",
               "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "Share",
-              "type": "address"
             }
           ],
           "internalType": "struct DAOs.DAOIMPLs",
@@ -216,14 +208,9 @@
               "internalType": "bytes",
               "name": "extend",
               "type": "bytes"
-            },
-            {
-              "internalType": "address",
-              "name": "unlockOperator",
-              "type": "address"
             }
           ],
-          "internalType": "struct DAO.InitDAOArgs",
+          "internalType": "struct DAOs.InitDAOArgs",
           "name": "daoArgs",
           "type": "tuple"
         },
@@ -365,14 +352,9 @@
               "internalType": "bytes",
               "name": "extend",
               "type": "bytes"
-            },
-            {
-              "internalType": "address",
-              "name": "unlockOperator",
-              "type": "address"
             }
           ],
-          "internalType": "struct DAO.InitDAOArgs",
+          "internalType": "struct DAOs.InitDAOArgs",
           "name": "daoArgs",
           "type": "tuple"
         },
@@ -525,18 +507,8 @@
             },
             {
               "internalType": "string",
-              "name": "base_contract_uri",
+              "name": "contractURIPrefix",
               "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "base_uri",
-              "type": "string"
-            },
-            {
-              "internalType": "bool",
-              "name": "enable_lock",
-              "type": "bool"
             }
           ],
           "internalType": "struct DAOs.InitAssetArgs",
@@ -556,55 +528,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "contract IDAO",
-          "name": "host",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "operator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "totalSupply",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "maxSupply",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "symbol",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "description",
-          "type": "string"
-        }
-      ],
-      "name": "deployShare",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "length",
       "outputs": [
@@ -615,7 +538,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -634,7 +558,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -653,7 +578,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -666,94 +592,18 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
         {
           "internalType": "address",
-          "name": "impl_",
+          "name": "impl",
           "type": "address"
         }
       ],
       "name": "upgrade",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "r",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "s",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "uint8",
-              "name": "v",
-              "type": "uint8"
-            },
-            {
-              "components": [
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "address",
-                  "name": "from",
-                  "type": "address"
-                },
-                {
-                  "internalType": "address",
-                  "name": "to",
-                  "type": "address"
-                },
-                {
-                  "internalType": "address",
-                  "name": "source",
-                  "type": "address"
-                },
-                {
-                  "internalType": "address",
-                  "name": "erc20",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "amount",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "eth",
-                  "type": "uint256"
-                }
-              ],
-              "internalType": "struct AssetShell.UnlockForOperator[]",
-              "name": "data",
-              "type": "tuple[]"
-            }
-          ],
-          "internalType": "struct DAOs.UnlockAssetForOperator[]",
-          "name": "unlock",
-          "type": "tuple[]"
-        }
-      ],
-      "name": "unlockAssetForOperator",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

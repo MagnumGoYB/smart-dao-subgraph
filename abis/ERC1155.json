@@ -1,6 +1,11 @@
 {
   "abi": [
     {
+      "inputs": [],
+      "name": "MethodNotImplemented",
+      "type": "error"
+    },
+    {
       "anonymous": false,
       "inputs": [
         {
@@ -363,5 +368,6 @@
       "stateMutability": "nonpayable",
       "type": "function"
     }
-  ]
+  ],
+  "contractName": "ERC1155"
 }

@@ -1,4 +1,4 @@
-import { Address, dataSource, log } from '@graphprotocol/graph-ts'
+import { Address, dataSource, log, BigInt } from '@graphprotocol/graph-ts'
 
 import {
   ADDRESS_ZERO,
@@ -6,12 +6,19 @@ import {
   getOrCreateAsset,
   getOrCreateAssetOrder,
   getOrCreateAssetPool,
+  getOrCreateAssetTxRecord,
+  getOrCreateDAO,
+  getOrCreateLedger,
+  getOrCreateLedgerAssetIncome,
   getOrCreateStatistic
 } from '../utils'
+import { Asset, AssetTxRecord, LedgerPool } from '../../generated/schema'
 import {
+  Receive as ReceiveEvent,
   TransferBatch as TransferBatchEvent,
-  TransferSingle as TransferSingleEvent
-} from './../../generated/templates/AssetInitializable/Asset'
+  TransferSingle as TransferSingleEvent,
+  Unlock as UnlockEvent
+} from './../../generated/templates/AssetInitializable/AssetShell'
 
 const context = dataSource.context()
 const DAOAddress = context.getString('DAOAddress')
@@ -71,6 +78,25 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
       event.transaction.value
     )
     statistic.save()
+
+    getOrCreateAssetOrder(
+      pool,
+      asset,
+      event.params.from,
+      event.params.to,
+      event.block,
+      event.transaction,
+      event.logIndex
+    )
+
+    getOrCreateAssetTxRecord(
+      dataSource.address(),
+      asset.tokenId,
+      event.transaction,
+      event.block,
+      event.params.from,
+      event.params.to
+    )
   }
 
   if (
@@ -100,14 +126,6 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
       event.params.id.toHex()
     ])
   }
-
-  getOrCreateAssetOrder(
-    pool,
-    asset,
-    event.block,
-    event.transaction,
-    event.logIndex
-  )
 }
 
 export function handleTransferBatch(event: TransferBatchEvent): void {
@@ -148,6 +166,8 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       getOrCreateAssetOrder(
         pool,
         asset,
+        event.params.from,
+        event.params.to,
         event.block,
         event.transaction,
         event.logIndex
@@ -198,9 +218,20 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
       getOrCreateAssetOrder(
         pool,
         asset,
+        event.params.from,
+        event.params.to,
         event.block,
         event.transaction,
         event.logIndex
+      )
+
+      getOrCreateAssetTxRecord(
+        dataSource.address(),
+        asset.tokenId,
+        event.transaction,
+        event.block,
+        event.params.from,
+        event.params.to
       )
     }
   }
@@ -241,14 +272,158 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
         dataSource.address().toHex(),
         event.params.ids[i].toHex()
       ])
+    }
+  }
+}
 
-      getOrCreateAssetOrder(
-        pool,
-        asset,
+export function handleUnlock(event: UnlockEvent): void {
+  log.info(
+    'Asset Unlock. Asset Address {}, ERC-20 {}, TokenID {}, From {}, To {}, Amount {}, Count {}',
+    [
+      dataSource.address().toHex(),
+      event.params.erc20.toHex(),
+      event.params.tokenId.toHex(),
+      event.params.from.toHex(),
+      event.params.to.toHex(),
+      event.params.amount.toString(),
+      event.params.count.toString()
+    ]
+  )
+
+  const pool = getOrCreateAssetPool(
+    dataSource.address(),
+    Address.fromString(DAOAddress),
+    type
+  )
+  const asset = getOrCreateAsset(
+    dataSource.address(),
+    pool,
+    event.params.tokenId,
+    event.params.to,
+    event.block,
+    event.transaction
+  )
+  const dao = getOrCreateDAO(Address.fromString(DAOAddress))
+  if (dao.ledgerPool) {
+    const ledgerPool = LedgerPool.load(dao.ledgerPool!)
+    if (ledgerPool) {
+      const from = event.params.from
+      const to = event.params.to
+      const source = event.params.source
+      const amount = event.params.amount
+      const erc20 = event.params.erc20
+      const ledger = getOrCreateLedger(
+        BigInt.fromI32(5), // LedgerType = "0x5"
+        Address.fromString(ledgerPool.id),
+        event.transaction.hash,
+        Address.fromString(DAOAddress),
         event.block,
-        event.transaction,
-        event.logIndex
+        {
+          from,
+          to,
+          amount,
+          member: null,
+          name: null,
+          description: null,
+          erc20: Address.zero().equals(erc20) ? null : erc20
+        }
       )
+
+      getOrCreateLedgerAssetIncome(
+        ledgerPool,
+        ledger,
+        asset,
+        event.transaction,
+        {
+          from,
+          to,
+          source,
+          amount,
+          price: amount.times(BigInt.fromI32(10_000)).div(pool.tax!),
+          type,
+          block: event.block,
+          erc20: Address.zero().equals(erc20) ? null : erc20
+        }
+      )
+    }
+  }
+}
+
+export function handleReceive(event: ReceiveEvent): void {
+  log.info('Asset Receive. Asset Address {}, Sender {}, Amount {}', [
+    dataSource.address().toHex(),
+    event.params.sender.toHex(),
+    event.params.amount.toString()
+  ])
+
+  const txHash = event.transaction.hash
+  const recordId = dataSource
+    .address()
+    .toHex()
+    .concat('-')
+    .concat(txHash.toHex())
+
+  const record = AssetTxRecord.load(recordId)
+  if (record) {
+    log.debug('Asset Receive Record Loaded. Record {}', [recordId])
+
+    const from = Address.fromBytes(record.from)
+    const to = Address.fromBytes(record.to)
+    const tokenId = record.tokenId
+    const pool = getOrCreateAssetPool(
+      dataSource.address(),
+      Address.fromString(DAOAddress),
+      type
+    )
+
+    const asset = getOrCreateAsset(
+      dataSource.address(),
+      pool,
+      tokenId,
+      to,
+      event.block,
+      event.transaction
+    )
+
+    const dao = getOrCreateDAO(Address.fromString(DAOAddress))
+    if (dao.ledgerPool) {
+      const ledgerPool = LedgerPool.load(dao.ledgerPool!)
+      if (ledgerPool) {
+        const amount = event.params.amount
+        const ledger = getOrCreateLedger(
+          BigInt.fromI32(5), // LedgerType = "0x5"
+          Address.fromString(ledgerPool.id),
+          event.transaction.hash,
+          Address.fromString(DAOAddress),
+          event.block,
+          {
+            from,
+            to,
+            amount,
+            member: null,
+            name: null,
+            description: null,
+            erc20: null
+          }
+        )
+
+        getOrCreateLedgerAssetIncome(
+          ledgerPool,
+          ledger,
+          asset,
+          event.transaction,
+          {
+            from,
+            to,
+            source: event.params.sender,
+            amount,
+            price: amount.times(BigInt.fromI32(10_000)).div(pool.tax!),
+            type,
+            block: event.block,
+            erc20: null
+          }
+        )
+      }
     }
   }
 }

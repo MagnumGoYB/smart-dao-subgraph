@@ -10,9 +10,9 @@ dataSources:
     name: DAOsFactory
     network: goerli
     source:
-      address: '0x555309800BDDd188A5B51728d5611725d9bBad02'
+      address: '0xe5a75c22B074B563185856F5a679DB56daD2c227'
       abi: DAOs
-      startBlock: 8860453
+      startBlock: 9048697
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -121,25 +121,44 @@ templates:
       abis:
         - name: Ledger
           file: ./abis/Ledger.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event: Receive(indexed address,uint256)
           handler: handleReceive
-        - event: ReleaseLog(indexed address,uint256,string)
+        - event: ReleaseLog(indexed address,indexed address,uint256,string)
           handler: handleReleaseLog
         - event: Deposit(indexed address,uint256,string,string)
           handler: handleDeposit
-        - event: Withdraw(indexed address,uint256,string)
+        - event: Withdraw(indexed address,indexed address,uint256,string)
           handler: handleWithdraw
-        - event: Release(indexed uint256,indexed address,uint256)
+        - event: Release(indexed uint256,indexed address,indexed address,uint256)
           handler: handleRelease
-        - event: AssetIncome(indexed address,indexed uint256,indexed address,address,address,uint256,uint256,uint256,uint8)
-          handler: handleAssetIncome
+
+  - name: ERC20Initializable
+    kind: ethereum/contract
+    network: goerli
+    source:
+      abi: ERC20
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/vaults/erc20.ts
+      entities:
+        - ERC20
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
 
   - name: AssetInitializable
     kind: ethereum/contract
     network: goerli
     source:
-      abi: Asset
+      abi: AssetShell
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -150,6 +169,8 @@ templates:
       abis:
         - name: ERC1155
           file: ./abis/ERC1155.json
+        - name: ERC20
+          file: ./abis/ERC20.json
         - name: Asset
           file: ./abis/Asset.json
         - name: AssetShell
@@ -159,3 +180,7 @@ templates:
           handler: handleTransferSingle
         - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
           handler: handleTransferBatch
+        - event: Unlock(indexed uint256,indexed address,indexed address,address,address,uint256,uint256,uint256)
+          handler: handleUnlock
+        - event: Receive(indexed address,uint256)
+          handler: handleReceive

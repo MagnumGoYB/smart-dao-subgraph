@@ -1,13 +1,22 @@
-import { Address, Bytes, BigInt, log, ethereum } from '@graphprotocol/graph-ts'
+import {
+  Address,
+  Bytes,
+  BigInt,
+  log,
+  ethereum,
+  json
+} from '@graphprotocol/graph-ts'
 
 import {
   Account,
   Asset,
   AssetOrder,
   AssetPool,
+  AssetTxRecord,
   DAO,
   Ledger,
   LedgerAssetIncome,
+  LedgerBalance,
   LedgerPool,
   Member,
   MemberPool,
@@ -19,6 +28,7 @@ import {
 import {
   fetchAssetShellValue,
   fetchAssetValue,
+  fetchERC20,
   fetchMemberPoolValue,
   fetchMemberValue,
   fetchVotePoolValue,
@@ -32,11 +42,23 @@ export const ONE_BI = BigInt.fromI32(1)
 export const ADDRESS_ZERO = Address.zero()
 export class CreateLedgerParam {
   from: Address | null
-  balance: BigInt | null
+  amount: BigInt | null
   name: string | null
   description: string | null
   to: Address | null
   member: BigInt | null
+  erc20: Address | null
+}
+
+export class LedgerAssetIncomeCreateData {
+  from: Address
+  to: Address
+  source: Address
+  amount: BigInt
+  price: BigInt
+  type: string
+  erc20: Address | null
+  block: ethereum.Block
 }
 
 export function getOrCreateStatistic(): Statistic {
@@ -157,7 +179,7 @@ export function getOrCreateAssetPool(
   const assetContract = fetchAssetShellValue(address)
   const id = address.toHex()
   let assetPool = AssetPool.load(id)
-  if (assetPool === null) {
+  if (assetPool === null && type) {
     assetPool = new AssetPool(id)
     assetPool.host = DAOAddress.toHex()
     assetPool.total = ZERO_BI
@@ -344,13 +366,13 @@ export function getOrCreateLedger(
     switch (t) {
       case receive:
         ledger.target = params.from
-        ledger.balance = params.balance
+        ledger.amount = params.amount
         ledger.ref = params.from
         ledger.type = 'Receive'
         break
       case deposit:
         ledger.target = params.from
-        ledger.balance = params.balance
+        ledger.amount = params.amount
         ledger.name = params.name
         ledger.description = params.description
         ledger.ref = params.from
@@ -358,14 +380,14 @@ export function getOrCreateLedger(
         break
       case withdraw:
         ledger.target = params.to
-        ledger.balance = params.balance
+        ledger.amount = params.amount
         ledger.description = params.description
         ledger.ref = params.to
         ledger.type = 'Withdraw'
         break
       case release:
         ledger.target = params.to
-        ledger.balance = params.balance
+        ledger.amount = params.amount
         ledger.member = params.member
         ledger.ref = params.to
         ledger.type = 'Release'
@@ -373,7 +395,7 @@ export function getOrCreateLedger(
       case assetIncome:
         ledger.target = params.to
         ledger.ref = params.from
-        ledger.balance = params.balance
+        ledger.amount = params.amount
         ledger.type = 'AssetIncome'
         break
     }
@@ -391,6 +413,11 @@ export function getOrCreateLedger(
         ledger.blockNumber = block.number
         ledger.blockTimestamp = block.timestamp
         ledger.state = 'Enable'
+        if (params.erc20 !== null) {
+          ledger.erc20 = params.erc20
+          const erc20 = fetchERC20(params.erc20!)
+          ledger.symbol = erc20.symbol
+        }
 
         ledger.save()
         log.info('New Ledger ID {}, Type {}', [id, type.toHex()])
@@ -471,6 +498,8 @@ export function getOrCreateAsset(
 export function getOrCreateAssetOrder(
   pool: AssetPool,
   asset: Asset,
+  from: Address,
+  to: Address,
   block: ethereum.Block,
   tx: ethereum.Transaction,
   logIndex: BigInt
@@ -484,8 +513,8 @@ export function getOrCreateAssetOrder(
     order.assetPool = pool.id
     order.txHash = tx.hash
     order.value = tx.value
-    order.from = tx.from
-    order.to = tx.to ? tx.to! : ADDRESS_ZERO
+    order.from = from
+    order.to = to
     order.blockId = block.hash.toHex()
     order.blockNumber = block.number
     order.blockTimestamp = block.timestamp
@@ -505,54 +534,119 @@ export function getOrCreateLedgerAssetIncome(
   pool: LedgerPool,
   ledger: Ledger,
   asset: Asset,
-  source: Address,
-  balance: BigInt,
-  price: BigInt,
-  saleType: BigInt,
-  block: ethereum.Block,
-  tx: ethereum.Transaction
-): LedgerAssetIncome {
+  tx: ethereum.Transaction,
+  createData?: LedgerAssetIncomeCreateData
+): LedgerAssetIncome | null {
   const id = asset.id
     .concat('-')
     .concat(ledger.id)
     .concat('-')
     .concat(tx.hash.toHex())
   let income = LedgerAssetIncome.load(id)
-  if (income === null) {
+  if (income === null && createData) {
     income = new LedgerAssetIncome(id)
     income.host = asset.host
     income.asset = asset.id
     income.ledger = ledger.id
     income.ledgerPool = pool.id
     income.txHash = tx.hash
-    income.from = tx.from
-    income.to = tx.to ? tx.to! : ADDRESS_ZERO
-    income.source = source
-    income.balance = balance
-    income.price = price
-    income.blockId = block.hash.toHex()
-    income.blockNumber = block.number
-    income.blockTimestamp = block.timestamp
-    const t = saleType.toU32()
-    const kDefault = BigInt.fromI32(0).toU32()
-    const kFirst = BigInt.fromI32(1).toU32()
-    const kSecond = BigInt.fromI32(2).toU32()
-    switch (t) {
-      case kDefault:
-        income.saleType = 'kDefault'
-        break
-      case kFirst:
-        income.saleType = 'kFirst'
-        break
-      case kSecond:
-        income.saleType = 'kSecond'
-        break
+    income.from = createData.from
+    income.to = createData.to
+    income.source = createData.source
+    income.amount = createData.amount
+    income.price = createData.price
+    income.blockId = createData.block.hash.toHex()
+    income.blockNumber = createData.block.number
+    income.blockTimestamp = createData.block.timestamp
+    income.saleType = createData.type
+    if (createData.erc20) {
+      const erc20Values = fetchERC20(createData.erc20!)
+      income.erc20 = createData.erc20
+      income.symbol = erc20Values.symbol
     }
     income.save()
     log.info('Ledger Asset Income Created. ID {}', [id])
+    return income as LedgerAssetIncome
   }
+  return null
+}
 
-  return income as LedgerAssetIncome
+export function getOrUpdateLedgerBalance(
+  ledgerId: string,
+  erc20: Address,
+  amount?: BigInt,
+  block?: ethereum.Block
+): LedgerBalance | null {
+  const ledger = Ledger.load(ledgerId)
+  if (ledger !== null) {
+    const id = ledgerId.concat('-').concat(erc20.toHex())
+    const erc20Values = fetchERC20(erc20)
+    let ledgerBalance = LedgerBalance.load(id)
+    if (ledgerBalance === null && amount && block) {
+      ledgerBalance = new LedgerBalance(id)
+      ledgerBalance.erc20 = erc20
+      ledgerBalance.ledger = ledger.id
+      ledgerBalance.host = ledger.host
+      ledgerBalance.symbol = erc20Values.symbol
+      ledgerBalance.name = erc20Values.name
+      ledgerBalance.time = block.timestamp
+      ledgerBalance.items = BigInt.fromI32(1)
+      ledgerBalance.value = amount
+      if (amount < BigInt.fromI32(0)) {
+        ledgerBalance.expenditure = amount
+      } else {
+        ledgerBalance.income = amount
+      }
+      ledgerBalance.save()
+    } else if (ledgerBalance !== null && amount && block) {
+      ledgerBalance.time = block.timestamp
+      ledgerBalance.items = ledgerBalance.items.plus(ONE_BI)
+      ledgerBalance.value = ledgerBalance.value.plus(amount)
+      if (amount < BigInt.fromI32(0)) {
+        ledgerBalance.expenditure = ledgerBalance.expenditure!.minus(amount)
+      } else {
+        ledgerBalance.income = ledgerBalance.income!.plus(amount)
+      }
+      ledgerBalance.save()
+    }
+    return ledgerBalance as LedgerBalance
+  }
+  return null
+}
+
+export function getOrCreateAssetTxRecord(
+  address: Address,
+  tokenId: BigInt,
+  tx: ethereum.Transaction,
+  block?: ethereum.Block,
+  from?: Address,
+  to?: Address
+): AssetTxRecord | null {
+  // "ID (hash) - (Asset Address).concat('-').concat(tokenId).concat('-').concat(txHash)"
+  const assetId = address.toHex().concat('-').concat(tokenId.toHex())
+  const asset = Asset.load(assetId)
+  if (asset !== null) {
+    const id = address.toHex().concat('-').concat(tx.hash.toHex())
+    let record = AssetTxRecord.load(id)
+    if (record === null && block && from && to) {
+      record = new AssetTxRecord(id)
+      record.asset = asset.id
+      record.host = asset.host
+      record.assetPool = asset.assetPool
+      record.txHash = tx.hash
+      record.token = address
+      record.tokenId = tokenId
+      record.blockId = block.hash.toHex()
+      record.blockNumber = block.number
+      record.value = tx.value
+      record.from = from
+      record.to = to
+      record.save()
+    } else if (record !== null && !block) {
+    }
+    return record as AssetTxRecord
+  }
+  return null
 }
 
 export function setExecutor(DAOAddress: Address): void {

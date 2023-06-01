@@ -4,7 +4,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "impl_",
+          "name": "impl",
           "type": "address"
         }
       ],
@@ -13,7 +13,8 @@
     },
     {
       "stateMutability": "payable",
-      "type": "fallback"
+      "type": "fallback",
+      "payable": true
     }
   ],
   "contractName": "DAOsProxy"

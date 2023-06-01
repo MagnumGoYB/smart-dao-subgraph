@@ -154,7 +154,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "operator_",
+          "name": "operator",
           "type": "address"
         }
       ],
@@ -167,7 +167,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "impl_",
+          "name": "impl",
           "type": "address"
         }
       ],

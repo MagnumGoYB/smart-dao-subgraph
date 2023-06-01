@@ -1,6 +1,11 @@
 {
   "abi": [
     {
+      "inputs": [],
+      "name": "AssetNonExistsInAssetShell",
+      "type": "error"
+    },
+    {
       "inputs": [
         {
           "internalType": "bytes4",
@@ -13,12 +18,37 @@
     },
     {
       "inputs": [],
+      "name": "LockTokenIDValueEmptyInAssetShell",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "MethodNotImplemented",
       "type": "error"
     },
     {
       "inputs": [],
-      "name": "NoPermissionToMintNFTs1155",
+      "name": "NeedToUnlockAssetFirst",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NeedToUnlockAssetFirstForPreviousOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NonContractAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PayableInsufficientAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PayableInsufficientAmountWETH",
       "type": "error"
     },
     {
@@ -33,12 +63,7 @@
     },
     {
       "inputs": [],
-      "name": "TokenIDAlreadyExistsInAsset",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "TokenIDMustEvenNumberInAsset",
+      "name": "PermissionDeniedForOnlyDAOsOperator",
       "type": "error"
     },
     {
@@ -506,6 +531,19 @@
     },
     {
       "inputs": [],
+      "name": "saleType",
+      "outputs": [
+        {
+          "internalType": "enum IAssetShell.SaleType",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "seller_fee_basis_points",
       "outputs": [
         {
@@ -620,6 +658,10 @@
       "type": "function"
     },
     {
+      "stateMutability": "payable",
+      "type": "receive"
+    },
+    {
       "inputs": [
         {
           "internalType": "bytes4",
@@ -649,6 +691,11 @@
           "internalType": "address",
           "name": "operator",
           "type": "address"
+        },
+        {
+          "internalType": "enum IAssetShell.SaleType",
+          "name": "_saleType",
+          "type": "uint8"
         },
         {
           "components": [
@@ -698,7 +745,7 @@
           "type": "tuple"
         }
       ],
-      "name": "initAsset",
+      "name": "initAssetShell",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -707,27 +754,38 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "to",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "from",
           "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "id",
+          "name": "tokenId",
           "type": "uint256"
         },
         {
-          "internalType": "string",
-          "name": "_tokenURI",
-          "type": "string"
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
         },
         {
           "internalType": "bytes",
-          "name": "_data",
+          "name": "data",
           "type": "bytes"
         }
       ],
-      "name": "safeMint",
-      "outputs": [],
+      "name": "onERC1155Received",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -735,27 +793,38 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "to",
+          "name": "operator",
           "type": "address"
         },
         {
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
         },
         {
-          "internalType": "string",
-          "name": "_tokenURI",
-          "type": "string"
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
         },
         {
-          "internalType": "uint256",
-          "name": "minPrice",
-          "type": "uint256"
+          "internalType": "uint256[]",
+          "name": "values",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
         }
       ],
-      "name": "makeNFT",
-      "outputs": [],
+      "name": "onERC1155BatchReceived",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -763,35 +832,31 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "to",
+          "name": "metaToken",
           "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minPrice",
+          "name": "metaTokenId",
           "type": "uint256"
         }
       ],
-      "name": "copyNFTs",
-      "outputs": [],
-      "stateMutability": "nonpayable",
+      "name": "convertTokenID",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
       "type": "function"
     },
     {
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "id",
+          "name": "tokenId",
           "type": "uint256"
         }
       ],
@@ -805,7 +870,229 @@
       ],
       "stateMutability": "view",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "assetMeta",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IAssetShell.AssetID",
+          "name": "meta",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "lockedOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "length",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "lockedAt",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "previous",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "minimumPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "tokenId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "owner",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "previous",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct AssetShell.LockedID",
+              "name": "lock",
+              "type": "tuple"
+            },
+            {
+              "internalType": "enum AssetShell.PayType",
+              "name": "payType",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "payValue",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "payBank",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "payer",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct AssetShell.UnlockForOperator[]",
+          "name": "data",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "unlockForOperator",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "previous",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct AssetShell.LockedID",
+          "name": "lock",
+          "type": "tuple"
+        }
+      ],
+      "name": "unlock",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
     }
-  ],
-  "contractName": "Asset"
+  ]
 }

@@ -2,9 +2,15 @@ import { Address, Bytes, log, BigInt } from '@graphprotocol/graph-ts'
 
 import { AssetShell as AssetShellContract } from '../generated/templates/AssetInitializable/AssetShell'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
+import { ERC20 as ERC20Contract } from '../generated/templates/ERC20Initializable/ERC20'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
 import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
 import { ZERO_BI } from './utils'
+
+export class ERC20Info {
+  symbol: string | null
+  name: string | null
+}
 
 export class DAOPrimaryInfo {
   name: string
@@ -16,6 +22,7 @@ export class DAOPrimaryInfo {
   votePoolAddress: Address
   operatorAddress: Address
   ledgerAddress: Address
+  originAssetAddress: Address
   assetAddress: Address
   asset2Address: Address
 }
@@ -69,6 +76,7 @@ export class AssetContractInfo {
   baseURI: string
   externalLink: string
   sellerFeeBasisPoints: BigInt
+  isEnableLock: boolean
 }
 
 export class CreateLedgerParam {
@@ -92,6 +100,7 @@ export function fetchDAOBasicValue(address: Address): DAOPrimaryInfo {
     votePoolAddress: contract.root(),
     operatorAddress: contract.operator(),
     ledgerAddress: contract.ledger(),
+    originAssetAddress: contract.asset(),
     assetAddress: contract.first(),
     asset2Address: contract.second()
   } as DAOPrimaryInfo
@@ -193,6 +202,17 @@ export function fetchAssetShellValue(address: Address): AssetContractInfo {
     description: contract.description(),
     baseURI: contract.baseURI(),
     externalLink: contract.external_link(),
-    sellerFeeBasisPoints: contract.seller_fee_basis_points()
+    sellerFeeBasisPoints: contract.seller_fee_basis_points(),
+    isEnableLock: contract.isEnableLock()
   } as AssetContractInfo
+}
+
+export function fetchERC20(address: Address): ERC20Info {
+  const contract = ERC20Contract.bind(address)
+  const tryName = contract.try_name()
+  const trySymbol = contract.try_symbol()
+  return {
+    symbol: trySymbol.reverted ? null : trySymbol.value,
+    name: tryName.reverted ? null : tryName.value
+  } as ERC20Info
 }

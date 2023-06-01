@@ -13,11 +13,6 @@
     },
     {
       "inputs": [],
-      "name": "MethodNotImplemented",
-      "type": "error"
-    },
-    {
-      "inputs": [],
       "name": "NoPermissionToMintNFTs1155",
       "type": "error"
     },

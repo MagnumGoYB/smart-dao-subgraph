@@ -4,7 +4,6 @@ import { ADDRESS_ZERO, getOrCreateLedger } from '../utils'
 import { SetModule as SetModuleEvent } from './../../generated/templates/DAOInitializable/DAO'
 
 export function handleSetModule(event: SetModuleEvent): void {
-  const daoAddress = dataSource.address()
   log.info('DAO {}, SetModule {}, Tag {}', [
     dataSource.address().toHex(),
     event.params.addr.toHex(),
@@ -17,22 +16,24 @@ export function handleSetModule(event: SetModuleEvent): void {
     switch (id) {
       case Module_LEDGER_ID:
         log.info('DAO Ledger Module {}', [event.params.addr.toHex()])
-        const type = BigInt.fromU32(0) // LedgerType = "0x0"
-        getOrCreateLedger(
-          type,
-          event.params.addr,
-          event.transaction.hash,
-          daoAddress,
-          event.block,
-          {
-            from: null,
-            balance: null,
-            name: null,
-            description: null,
-            to: null,
-            member: null
-          }
-        )
+        // const type = BigInt.fromU32(0) // LedgerType = "0x0"
+        // getOrCreateLedger(
+        //   type,
+        //   event.params.addr,
+        //   event.transaction.hash,
+        //   daoAddress,
+        //   event.block,
+        //   {
+        //     from: null,
+        //     amount: null,
+        //     name: null,
+        //     description: null,
+        //     to: null,
+        //     member: null,
+        //     erc20: null,
+        //     symbol: null
+        //   }
+        // )
         break
     }
   }

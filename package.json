@@ -12,18 +12,19 @@
     "pretty": "pretty-quick --staged && prettier-package-json --write"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.4.2",
-    "@commitlint/config-conventional": "^17.4.2",
-    "@graphprotocol/graph-cli": "^0.49",
-    "@graphprotocol/graph-ts": "^0.30",
-    "@types/node": "^20.1.3",
-    "husky": "^8.0.2",
-    "lint-staged": "^13.1.0",
-    "prettier": "^2.8.1",
+    "@commitlint/cli": "^17.6.3",
+    "@commitlint/config-conventional": "^17.6.3",
+    "@graphprotocol/graph-cli": "^0.50.1",
+    "@graphprotocol/graph-ts": "^0.30.0",
+    "@types/node": "^20.2.4",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "node-fetch": "^3.3.1",
+    "prettier": "^2.8.8",
     "prettier-package-json": "^2.8.0",
     "prettier-plugin-sort-imports-by-identifier": "^3.3.4",
     "pretty-quick": "^3.1.3",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.5"
   },
   "packageManager": "pnpm@7.19.0"
 }
