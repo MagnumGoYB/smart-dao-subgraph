@@ -4,7 +4,6 @@ import { AssetShell as AssetShellContract } from './../../generated/templates/As
 import { AssetTxRecord, LedgerPool } from '../../generated/schema'
 import { Transfer as TransferEvent } from './../../generated/templates/ERC20Initializable/ERC20'
 import {
-  fetchAssetShellValue,
   fetchDAOBasicValue,
   getOrCreateAsset,
   getOrCreateAssetPool,

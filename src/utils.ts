@@ -444,6 +444,7 @@ export function getOrCreateAsset(
   let asset = Asset.load(id)
   if (asset === null) {
     asset = new Asset(id)
+    asset.listed = false
     asset.host = pool.host
     asset.token = address
     asset.tokenId = tokenId

@@ -57,6 +57,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
     !ADDRESS_ZERO.equals(event.params.to)
   ) {
     // Asset transferred
+    asset.listed = true
     asset.selling = 'Opensea'
     asset.sellingTime = event.block.timestamp
     asset.sellPrice = event.transaction.value
@@ -104,6 +105,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
     !ADDRESS_ZERO.equals(event.params.from)
   ) {
     // Asset destroyed
+    asset.listed = false
     asset.owner = ADDRESS_ZERO.toHex()
     asset.destroyed = true
     asset.totalSupply = asset.totalSupply.minus(event.params.value)
@@ -190,6 +192,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
         event.transaction
       )
 
+      asset.listed = true
       asset.selling = 'Opensea'
       asset.sellingTime = event.block.timestamp
       asset.sellPrice = event.transaction.value
@@ -251,6 +254,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
         event.transaction
       )
 
+      asset.listed = false
       asset.owner = ADDRESS_ZERO.toHex()
       asset.destroyed = true
       asset.totalSupply = asset.totalSupply.minus(event.params.values[i])
