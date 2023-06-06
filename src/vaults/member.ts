@@ -44,16 +44,16 @@ export function handleTransfer(event: TransferEvent): void {
 
 export function handleUpdate(event: UpdateEvent): void {
   const tokenId = event.params.id
+  const info = fetchMemberValue(dataSource.address(), tokenId)
   const id = Address.fromString(DAOAddress)
     .toHex()
     .concat('-')
-    .concat(tokenId.toHex())
+    .concat(info.owner.toHex())
   let member = Member.load(id)
   if (member === null) {
     log.warning('DAO Member Update. ID {} Not Found', [id])
     return
   }
-  const info = fetchMemberValue(dataSource.address(), tokenId)
   member.name = info.name
   member.description = info.description
   member.image = info.image

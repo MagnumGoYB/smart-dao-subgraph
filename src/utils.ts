@@ -218,11 +218,12 @@ export function getOrCreateMember(
   dao.accounts = dao.accounts.concat([account.id])
   dao.save()
 
-  const id = DAOAddress.toHex().concat('-').concat(memberTokenId.toHex())
+  const id = DAOAddress.toHex().concat('-').concat(accountAddress.toHex())
   log.debug('Member ID {}', [id])
   let member = Member.load(id)
   if (member === null) {
     member = new Member(id)
+    member.address = accountAddress
     member.owner = account.id
     member.token = memberPoolAddress
     member.tokenId = memberTokenId
@@ -232,6 +233,11 @@ export function getOrCreateMember(
     member.memberPool = memberPool.id
     member.votes = memberValues.votes
     member.host = DAOAddress.toHex()
+    member.incomeTotal = ZERO_BI
+    member.incomeAmount = ZERO_BI
+    member.assetTotal = ZERO_BI
+    member.assetOrderAmount = ZERO_BI
+    member.assetOrderTotal = ZERO_BI
     member.save()
 
     memberPool.count = memberPool.count.plus(ONE_BI)
@@ -397,6 +403,7 @@ export function getOrCreateLedger(
         ledger.ref = params.from
         ledger.amount = params.amount
         ledger.type = 'AssetIncome'
+        ledgerPool.save()
         break
     }
     switch (t) {
@@ -424,6 +431,18 @@ export function getOrCreateLedger(
 
         ledgerPool.count = ledgerPool.count.plus(ONE_BI)
         ledgerPool.save()
+
+        if (ledger.target && ledger.amount) {
+          const MemberId = ledger.host
+            .concat('-')
+            .concat(ledger.target!.toHex())
+          const member = Member.load(MemberId)
+          if (member !== null) {
+            member.incomeTotal = member.incomeTotal.plus(ONE_BI)
+            member.incomeAmount = member.incomeAmount.plus(ledger.amount!)
+            member.save()
+          }
+        }
         break
     }
   }
@@ -492,6 +511,13 @@ export function getOrCreateAsset(
       assetValues.minimumPrice
     )
     statistic.save()
+
+    const MemberId = asset.host.concat('-').concat(to.toHex())
+    const member = Member.load(MemberId)
+    if (member !== null) {
+      member.assetTotal = member.assetTotal.plus(ONE_BI)
+      member.save()
+    }
   }
   return asset as Asset
 }
@@ -526,6 +552,21 @@ export function getOrCreateAssetOrder(
     pool.orderTotal = pool.orderTotal.plus(ONE_BI)
     pool.orderAmountTotal = pool.orderAmountTotal.plus(tx.value)
     pool.save()
+
+    const fromMemberId = asset.host.concat('-').concat(from.toHex())
+    const toMemberId = asset.host.concat('-').concat(to.toHex())
+    const fromMember = Member.load(fromMemberId)
+    if (fromMember !== null) {
+      fromMember.assetOrderTotal = fromMember.assetOrderTotal.plus(ONE_BI)
+      fromMember.assetOrderAmount = fromMember.assetOrderAmount.plus(tx.value)
+      fromMember.save()
+    }
+    const toMember = Member.load(toMemberId)
+    if (toMember !== null) {
+      toMember.assetOrderTotal = toMember.assetOrderTotal.plus(ONE_BI)
+      toMember.assetOrderAmount = toMember.assetOrderAmount.plus(tx.value)
+      toMember.save()
+    }
   }
 
   return order as AssetOrder
@@ -567,6 +608,10 @@ export function getOrCreateLedgerAssetIncome(
     }
     income.save()
     log.info('Ledger Asset Income Created. ID {}', [id])
+
+    pool.assetIncomeAmount = pool.assetIncomeAmount.plus(createData.amount)
+    pool.assetIncomeTotal = pool.assetIncomeTotal.plus(ONE_BI)
+    pool.save()
     return income as LedgerAssetIncome
   }
   return null

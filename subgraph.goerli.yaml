@@ -150,6 +150,12 @@ templates:
       abis:
         - name: ERC20
           file: ./abis/ERC20.json
+        - name: DAOs
+          file: ./abis/DAOs.json
+        - name: DAO
+          file: ./abis/DAO.json
+        - name: AssetShell
+          file: ./abis/AssetShell.json
       eventHandlers:
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer

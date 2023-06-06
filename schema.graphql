@@ -112,8 +112,10 @@ type MemberPool @entity {
 Member
 """
 type Member @entity {
-  "ID (hash) - (DAO Address).concat('-').concat(tokenId)"
+  "ID (hash) - (DAO Address).concat('-').concat(Wallet Address)"
   id: ID!
+  "Wallet Address"
+  address: Bytes!
   "Belong DAO"
   host: DAO!
   "721 Token Address"
@@ -132,6 +134,16 @@ type Member @entity {
   votes: BigInt
   "Member Pool"
   memberPool: MemberPool!
+  "Income Total"
+  incomeTotal: BigInt!
+  "Income Amount"
+  incomeAmount: BigInt!
+  "Asset Total"
+  assetTotal: BigInt!
+  "Asset Order Amount"
+  assetOrderAmount: BigInt!
+  "Asset Order Total"
+  assetOrderTotal: BigInt!
 }
 
 """

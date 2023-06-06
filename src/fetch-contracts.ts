@@ -33,6 +33,7 @@ export class MemberInfo {
   description: string
   image: string
   votes: BigInt
+  owner: Address
 }
 
 export class MemberPoolInfo {
@@ -126,10 +127,12 @@ export function fetchMemberValue(
   ])
   const baseName = contract.name()
   const total = contract.total()
+  const owner = contract.ownerOf(tokenId)
   log.debug('Total Member {}', [total.toString()])
   const info = contract.getMemberInfo(tokenId)
   return {
     baseName,
+    owner,
     name: info.name,
     description: info.description,
     image: info.image,
