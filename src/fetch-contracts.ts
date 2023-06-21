@@ -3,9 +3,9 @@ import { Address, Bytes, log, BigInt } from '@graphprotocol/graph-ts'
 import { AssetShell as AssetShellContract } from '../generated/templates/AssetInitializable/AssetShell'
 import { DAO as DAOContract } from '../generated/templates/DAOInitializable/DAO'
 import { ERC20 as ERC20Contract } from '../generated/templates/ERC20Initializable/ERC20'
+import { MEMBER_PERMISSIONS, ZERO_BI } from './utils'
 import { Member as MemberContract } from '../generated/templates/MemberInitializable/Member'
 import { VotePool as VotePoolContract } from '../generated/templates/VotePoolInitializable/VotePool'
-import { ZERO_BI } from './utils'
 
 export class ERC20Info {
   symbol: string | null
@@ -138,6 +138,21 @@ export function fetchMemberValue(
     image: info.image,
     votes: info.votes
   } as MemberInfo
+}
+
+export function fetchMemberIsPermissionFrom(
+  address: Address,
+  tokenId: BigInt
+): string[] {
+  let result: string[] = []
+  const contract = MemberContract.bind(address)
+  for (let i = 0; i < MEMBER_PERMISSIONS.length; i++) {
+    const action = MEMBER_PERMISSIONS[i]
+    if (contract.isPermissionFrom(tokenId, BigInt.fromU32(action))) {
+      result.push(BigInt.fromU32(action).toHex())
+    }
+  }
+  return result
 }
 
 export function fetchVotePoolValue(address: Address): VotePoolInfo {

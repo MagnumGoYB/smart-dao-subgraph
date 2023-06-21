@@ -78,6 +78,8 @@ templates:
           handler: handleUpdate
         - event: Change(indexed uint256,uint256)
           handler: handleChange
+        - event: SetPermissions(indexed uint256,uint256[],uint256[])
+          handler: handleSetPermissions
 
   - name: VotePoolInitializable
     kind: ethereum/contract

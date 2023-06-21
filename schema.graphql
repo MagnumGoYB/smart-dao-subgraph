@@ -138,12 +138,33 @@ type Member @entity {
   incomeTotal: BigInt!
   "Income Amount"
   incomeAmount: BigInt!
+  "Income ERC20 Amount"
+  incomeERC20Amount: [MemberIncomeAmountERC20!]
   "Asset Total"
   assetTotal: BigInt!
   "Asset Order Amount"
   assetOrderAmount: BigInt!
   "Asset Order Total"
   assetOrderTotal: BigInt!
+  "Permissions"
+  permissions: [String!]
+  "Block ID (hash)"
+  blockId: ID!
+  "Block Number"
+  blockNumber: BigInt!
+  "Block Timestamp"
+  blockTimestamp: BigInt!
+}
+
+type MemberIncomeAmountERC20 @entity {
+  "ID (hash) - (Member ID).concat('-').concat(ERC20 Address)"
+  id: ID!
+  "Belong Member"
+  member: Member!
+  "ERC20"
+  erc20: ERC20!
+  "Amount"
+  amount: BigInt!
 }
 
 """
@@ -275,6 +296,19 @@ type LedgerPool @entity {
   assetIncomeTotal: BigInt!
   "Asset Income Amount"
   assetIncomeAmount: BigInt!
+  "Asset Income ERC20 Amount"
+  assetIncomeERC20Amount: [LedgerPoolAssetIncomeERC20!]
+}
+
+type LedgerPoolAssetIncomeERC20 @entity {
+  "ID (hash) - (Ledger Pool ID).concat('-').concat(ERC20 Address)"
+  id: ID!
+  "Belong Ledger Pool"
+  ledgerPool: LedgerPool!
+  "ERC20"
+  erc20: ERC20!
+  "Amount"
+  amount: BigInt!
 }
 
 enum LedgerType {
@@ -329,10 +363,8 @@ type Ledger @entity {
   state: State!
   "Asset Income"
   assetIncome: LedgerAssetIncome
-  "ERC-20 Token Address"
-  erc20: Bytes
-  "ERC-20 Token Symbol"
-  symbol: String
+  "ERC-20"
+  erc20: ERC20
 }
 
 enum AssetPoolType {
@@ -504,10 +536,8 @@ type LedgerAssetIncome @entity {
   to: Bytes!
   "Sale Type"
   saleType: AssetPoolType!
-  "ERC-20 Token Address"
-  erc20: Bytes
-  "ERC-20 Token Symbol"
-  symbol: String
+  "ERC-20"
+  erc20: ERC20
   "Block ID (hash)"
   blockId: ID!
   "Block Number"
@@ -544,18 +574,14 @@ type AssetTxRecord @entity {
 }
 
 type LedgerBalance @entity {
-  "ID (hash) - (Ledger ID).concat('-').concat(ERC-20 Token Address)"
+  "ID (hash) - (host).concat('-').concat(ERC-20 Token Address)"
   id: ID!
   "DAO Host"
   host: DAO!
   "Belong Ledger"
-  ledger: Ledger!
-  "ERC-20 Token Address"
-  erc20: Bytes!
-  "ERC-20 Token Symbol"
-  symbol: String
-  "ERC-20 Token Name"
-  name: String
+  ledger: Ledger
+  "ERC-20"
+  erc20: ERC20
   "Balance"
   value: BigInt!
   "Income"
@@ -566,4 +592,13 @@ type LedgerBalance @entity {
   items: BigInt!
   "Block Timestamp"
   time: BigInt!
+}
+
+type ERC20 @entity {
+  "ERC-20 Token Address"
+  id: ID!
+  "ERC-20 Token Symbol"
+  symbol: String
+  "ERC-20 Token Name"
+  name: String
 }

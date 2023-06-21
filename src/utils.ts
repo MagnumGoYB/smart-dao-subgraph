@@ -14,11 +14,14 @@ import {
   AssetPool,
   AssetTxRecord,
   DAO,
+  ERC20,
   Ledger,
   LedgerAssetIncome,
   LedgerBalance,
   LedgerPool,
+  LedgerPoolAssetIncomeERC20,
   Member,
+  MemberIncomeAmountERC20,
   MemberPool,
   Proposal,
   Statistic,
@@ -40,6 +43,11 @@ export * from './fetch-contracts'
 export const ZERO_BI = BigInt.fromI32(0)
 export const ONE_BI = BigInt.fromI32(1)
 export const ADDRESS_ZERO = Address.zero()
+
+export const MEMBER_PERMISSIONS = [
+  0x22a25870, 0xdc6b0b72, 0x678ea396, 0x59baef2a, 0xd0a4ad96, 0x5d29163,
+  0x91eb3dee, 0x2e1a7d4d, 0xf108a7d2, 0xe0626f7e, 0x87c1ef90
+]
 export class CreateLedgerParam {
   from: Address | null
   amount: BigInt | null
@@ -164,6 +172,7 @@ export function getOrCreateLedgerPool(
     ledgerPool.host = DAOAddress.toHex()
     ledgerPool.count = ZERO_BI
     ledgerPool.assetIncomeAmount = ZERO_BI
+    ledgerPool.assetIncomeERC20Amount = []
     ledgerPool.assetIncomeTotal = ZERO_BI
     ledgerPool.save()
     log.info('Ledger Pool Created. ID {}', [id])
@@ -200,7 +209,8 @@ export function getOrCreateMember(
   accountAddress: Address,
   DAOAddress: Address,
   memberTokenId: BigInt,
-  memberPoolAddress: Address
+  memberPoolAddress: Address,
+  block?: ethereum.Block
 ): Member {
   const memberValues = fetchMemberValue(memberPoolAddress, memberTokenId)
   let memberPool = getOrCreateMemberPool(memberPoolAddress, DAOAddress)
@@ -235,9 +245,17 @@ export function getOrCreateMember(
     member.host = DAOAddress.toHex()
     member.incomeTotal = ZERO_BI
     member.incomeAmount = ZERO_BI
+    member.incomeERC20Amount = []
     member.assetTotal = ZERO_BI
     member.assetOrderAmount = ZERO_BI
     member.assetOrderTotal = ZERO_BI
+
+    if (block) {
+      member.blockId = block.hash.toHex()
+      member.blockNumber = block.number
+      member.blockTimestamp = block.timestamp
+    }
+
     member.save()
 
     memberPool.count = memberPool.count.plus(ONE_BI)
@@ -335,6 +353,49 @@ export function getOrCreateVote(
   return vote as Vote
 }
 
+export function gerOrCreateERC20(address: Address): ERC20 {
+  const id = address.toHex()
+  let erc20 = ERC20.load(id)
+  if (erc20 === null) {
+    erc20 = new ERC20(id)
+    const erc20Info = fetchERC20(address)
+    erc20.symbol = erc20Info.symbol
+    erc20.name = erc20Info.name
+    erc20.save()
+  }
+  return erc20 as ERC20
+}
+
+export function gerOrCreateLedgerPoolAssetIncomeERC20(
+  pool: Address,
+  erc20: Address
+): LedgerPoolAssetIncomeERC20 {
+  const id = pool.toHex().concat('-').concat(erc20.toHex())
+  let data = LedgerPoolAssetIncomeERC20.load(id)
+  if (data === null) {
+    data = new LedgerPoolAssetIncomeERC20(id)
+    data.erc20 = erc20.toHex()
+    data.ledgerPool = pool.toHex()
+    data.amount = ZERO_BI
+  }
+  return data as LedgerPoolAssetIncomeERC20
+}
+
+export function gerOrCreateMemberIncomeAmountERC20(
+  member: string,
+  erc20: Address
+): MemberIncomeAmountERC20 {
+  const id = member.concat('-').concat(erc20.toHex())
+  let data = MemberIncomeAmountERC20.load(id)
+  if (data === null) {
+    data = new MemberIncomeAmountERC20(id)
+    data.erc20 = erc20.toHex()
+    data.member = member
+    data.amount = ZERO_BI
+  }
+  return data as MemberIncomeAmountERC20
+}
+
 /**
  * @export
  * @param {string} type Reserved = 0x0, Receive = 0x1, Deposit = 0x2, Withdraw = 0x3, Release = 0x4, AssetIncome = 0x5
@@ -421,9 +482,7 @@ export function getOrCreateLedger(
         ledger.blockTimestamp = block.timestamp
         ledger.state = 'Enable'
         if (params.erc20 !== null) {
-          ledger.erc20 = params.erc20
-          const erc20 = fetchERC20(params.erc20!)
-          ledger.symbol = erc20.symbol
+          ledger.erc20 = gerOrCreateERC20(params.erc20!).id
         }
 
         ledger.save()
@@ -439,7 +498,23 @@ export function getOrCreateLedger(
           const member = Member.load(MemberId)
           if (member !== null) {
             member.incomeTotal = member.incomeTotal.plus(ONE_BI)
-            member.incomeAmount = member.incomeAmount.plus(ledger.amount!)
+            if (ledger.erc20) {
+              const erc20IncomeItem = gerOrCreateMemberIncomeAmountERC20(
+                MemberId,
+                Address.fromString(ledger.erc20!)
+              )
+              erc20IncomeItem.amount = erc20IncomeItem.amount.plus(
+                ledger.amount!
+              )
+              erc20IncomeItem.save()
+              if (!member.incomeERC20Amount!.includes(erc20IncomeItem.id)) {
+                member.incomeERC20Amount = member.incomeERC20Amount!.concat([
+                  erc20IncomeItem.id
+                ])
+              }
+            } else {
+              member.incomeAmount = member.incomeAmount.plus(ledger.amount!)
+            }
             member.save()
           }
         }
@@ -602,62 +677,85 @@ export function getOrCreateLedgerAssetIncome(
     income.blockTimestamp = createData.block.timestamp
     income.saleType = createData.type
     if (createData.erc20) {
-      const erc20Values = fetchERC20(createData.erc20!)
-      income.erc20 = createData.erc20
-      income.symbol = erc20Values.symbol
+      income.erc20 = gerOrCreateERC20(createData.erc20!).id
     }
     income.save()
     log.info('Ledger Asset Income Created. ID {}', [id])
 
-    pool.assetIncomeAmount = pool.assetIncomeAmount.plus(createData.amount)
+    if (income.erc20) {
+      const erc20IncomeItem = gerOrCreateLedgerPoolAssetIncomeERC20(
+        Address.fromString(pool.id),
+        Address.fromString(income.erc20!)
+      )
+      erc20IncomeItem.amount = erc20IncomeItem.amount.plus(createData.amount)
+      erc20IncomeItem.save()
+      if (!pool.assetIncomeERC20Amount!.includes(erc20IncomeItem.id)) {
+        pool.assetIncomeERC20Amount = pool.assetIncomeERC20Amount!.concat([
+          erc20IncomeItem.id
+        ])
+      }
+    } else {
+      pool.assetIncomeAmount = pool.assetIncomeAmount.plus(createData.amount)
+    }
     pool.assetIncomeTotal = pool.assetIncomeTotal.plus(ONE_BI)
     pool.save()
+
+    getOrUpdateLedgerBalance(
+      Address.fromString(income.host),
+      ledger.id,
+      income.erc20 ? Address.fromString(income.erc20!) : ADDRESS_ZERO,
+      income.amount,
+      createData.block
+    )
+
     return income as LedgerAssetIncome
   }
   return null
 }
 
 export function getOrUpdateLedgerBalance(
-  ledgerId: string,
+  dao: Address,
+  ledgerId: string | null,
   erc20: Address,
   amount?: BigInt,
   block?: ethereum.Block
-): LedgerBalance | null {
-  const ledger = Ledger.load(ledgerId)
-  if (ledger !== null) {
-    const id = ledgerId.concat('-').concat(erc20.toHex())
-    const erc20Values = fetchERC20(erc20)
-    let ledgerBalance = LedgerBalance.load(id)
-    if (ledgerBalance === null && amount && block) {
-      ledgerBalance = new LedgerBalance(id)
-      ledgerBalance.erc20 = erc20
-      ledgerBalance.ledger = ledger.id
-      ledgerBalance.host = ledger.host
-      ledgerBalance.symbol = erc20Values.symbol
-      ledgerBalance.name = erc20Values.name
-      ledgerBalance.time = block.timestamp
-      ledgerBalance.items = BigInt.fromI32(1)
-      ledgerBalance.value = amount
-      if (amount < BigInt.fromI32(0)) {
-        ledgerBalance.expenditure = amount
-      } else {
-        ledgerBalance.income = amount
-      }
-      ledgerBalance.save()
-    } else if (ledgerBalance !== null && amount && block) {
-      ledgerBalance.time = block.timestamp
-      ledgerBalance.items = ledgerBalance.items.plus(ONE_BI)
-      ledgerBalance.value = ledgerBalance.value.plus(amount)
-      if (amount < BigInt.fromI32(0)) {
-        ledgerBalance.expenditure = ledgerBalance.expenditure!.minus(amount)
-      } else {
-        ledgerBalance.income = ledgerBalance.income!.plus(amount)
-      }
-      ledgerBalance.save()
+): LedgerBalance {
+  const id = dao.toHex().concat('-').concat(erc20.toHex())
+  let ledgerBalance = LedgerBalance.load(id)
+  if (ledgerBalance === null && amount && block) {
+    ledgerBalance = new LedgerBalance(id)
+    if (ADDRESS_ZERO.equals(erc20)) {
+      ledgerBalance.erc20 = null
+    } else {
+      ledgerBalance.erc20 = gerOrCreateERC20(erc20).id
     }
-    return ledgerBalance as LedgerBalance
+    if (ledgerId !== null) {
+      ledgerBalance.ledger = ledgerId
+    }
+    ledgerBalance.host = dao.toHex()
+    ledgerBalance.time = block.timestamp
+    ledgerBalance.items = BigInt.fromI32(1)
+    ledgerBalance.value = amount
+    if (amount < BigInt.fromI32(0)) {
+      ledgerBalance.expenditure = amount
+      ledgerBalance.income = ZERO_BI
+    } else {
+      ledgerBalance.expenditure = ZERO_BI
+      ledgerBalance.income = amount
+    }
+    ledgerBalance.save()
+  } else if (ledgerBalance !== null && amount && block) {
+    ledgerBalance.time = block.timestamp
+    ledgerBalance.items = ledgerBalance.items.plus(ONE_BI)
+    ledgerBalance.value = ledgerBalance.value.plus(amount)
+    if (amount < BigInt.fromI32(0)) {
+      ledgerBalance.expenditure = ledgerBalance.expenditure!.minus(amount)
+    } else {
+      ledgerBalance.income = ledgerBalance.income!.plus(amount)
+    }
+    ledgerBalance.save()
   }
-  return null
+  return ledgerBalance as LedgerBalance
 }
 
 export function getOrCreateAssetTxRecord(

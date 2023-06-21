@@ -1,13 +1,18 @@
 import { Address, BigInt, dataSource, log } from '@graphprotocol/graph-ts'
 
 import {
+  ADDRESS_ZERO,
+  getOrCreateLedger,
+  getOrUpdateLedgerBalance
+} from '../utils'
+import {
   Deposit as DepositEvent,
   Receive as ReceiveEvent,
   Release as ReleaseEvent,
   ReleaseLog as ReleaseLogEvent,
   Withdraw as WithdrawEvent
 } from './../../generated/templates/LedgerInitializable/Ledger'
-import { getOrCreateLedger, getOrUpdateLedgerBalance } from '../utils'
+import { Ledger } from './../../generated/schema'
 
 const context = dataSource.context()
 const DAOAddress = context.getString('DAOAddress')
@@ -20,7 +25,7 @@ export function handleReceive(event: ReceiveEvent): void {
     event.params.amount.toHex()
   ])
 
-  getOrCreateLedger(
+  const ledger = getOrCreateLedger(
     BigInt.fromI32(1), // LedgerType = "0x1
     dataSource.address(),
     event.transaction.hash,
@@ -36,6 +41,14 @@ export function handleReceive(event: ReceiveEvent): void {
       erc20: null
     }
   )
+
+  getOrUpdateLedgerBalance(
+    Address.fromString(DAOAddress),
+    ledger.id,
+    ADDRESS_ZERO,
+    event.params.amount,
+    event.block
+  )
 }
 
 export function handleReleaseLog(event: ReleaseLogEvent): void {
@@ -49,6 +62,18 @@ export function handleReleaseLog(event: ReleaseLogEvent): void {
       event.params.amount.toHex()
     ]
   )
+
+  const erc20 = Address.zero().equals(event.params.erc20)
+    ? ADDRESS_ZERO
+    : event.params.erc20
+
+  getOrUpdateLedgerBalance(
+    Address.fromString(DAOAddress),
+    null,
+    erc20,
+    BigInt.fromI32(0).minus(event.params.amount),
+    event.block
+  )
 }
 
 export function handleDeposit(event: DepositEvent): void {
@@ -59,7 +84,7 @@ export function handleDeposit(event: DepositEvent): void {
     event.params.amount.toHex()
   ])
 
-  getOrCreateLedger(
+  const Ledger = getOrCreateLedger(
     BigInt.fromI32(2), // LedgerType = "0x2"
     dataSource.address(),
     event.transaction.hash,
@@ -75,6 +100,14 @@ export function handleDeposit(event: DepositEvent): void {
       erc20: null
     }
   )
+
+  getOrUpdateLedgerBalance(
+    Address.fromString(DAOAddress),
+    Ledger.id,
+    ADDRESS_ZERO,
+    event.params.amount,
+    event.block
+  )
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
@@ -89,6 +122,10 @@ export function handleWithdraw(event: WithdrawEvent): void {
     ]
   )
 
+  const erc20 = Address.zero().equals(event.params.erc20)
+    ? ADDRESS_ZERO
+    : event.params.erc20
+
   const ledger = getOrCreateLedger(
     BigInt.fromI32(3), // LedgerType = "0x3"
     dataSource.address(),
@@ -102,20 +139,17 @@ export function handleWithdraw(event: WithdrawEvent): void {
       name: null,
       description: event.params.description,
       member: null,
-      erc20: Address.zero().equals(event.params.erc20)
-        ? null
-        : event.params.erc20
+      erc20
     }
   )
 
-  if (!Address.zero().equals(event.params.erc20)) {
-    getOrUpdateLedgerBalance(
-      ledger.id,
-      event.params.erc20,
-      BigInt.fromI32(0).minus(event.params.amount),
-      event.block
-    )
-  }
+  getOrUpdateLedgerBalance(
+    Address.fromString(DAOAddress),
+    ledger.id,
+    erc20,
+    BigInt.fromI32(0).minus(event.params.amount),
+    event.block
+  )
 }
 
 export function handleRelease(event: ReleaseEvent): void {

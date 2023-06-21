@@ -2,12 +2,14 @@ import { Address, BigInt, dataSource, log } from '@graphprotocol/graph-ts'
 
 import {
   ADDRESS_ZERO,
+  fetchMemberIsPermissionFrom,
   fetchMemberValue,
   getOrCreateMember,
   setExecutor
 } from './../utils'
 import {
   Change as ChangeEvent,
+  SetPermissions as SetPermissionsEvent,
   Transfer as TransferEvent,
   Update as UpdateEvent
 } from './../../generated/templates/MemberInitializable/Member'
@@ -32,14 +34,41 @@ export function handleTransfer(event: TransferEvent): void {
       event.params.to,
       Address.fromString(DAOAddress),
       event.params.tokenId,
-      dataSource.address()
+      dataSource.address(),
+      event.block
     )
+
+    member.permissions = fetchMemberIsPermissionFrom(
+      dataSource.address(),
+      event.params.tokenId
+    )
+
+    member.save()
 
     log.info('DAO Member Created. Member ID {}, Owner {}', [
       member.id,
       member.owner
     ])
   }
+}
+
+export function handleSetPermissions(event: SetPermissionsEvent): void {
+  const tokenId = event.params.id
+  const info = fetchMemberValue(dataSource.address(), tokenId)
+  const id = Address.fromString(DAOAddress)
+    .toHex()
+    .concat('-')
+    .concat(info.owner.toHex())
+  let member = Member.load(id)
+  if (member === null) {
+    log.warning('DAO Member SetPermissions. ID {} Not Found', [id])
+    return
+  }
+  member.permissions = fetchMemberIsPermissionFrom(
+    dataSource.address(),
+    tokenId
+  )
+  member.save()
 }
 
 export function handleUpdate(event: UpdateEvent): void {
