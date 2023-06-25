@@ -20,6 +20,7 @@ import {
   LedgerBalance,
   LedgerPool,
   LedgerPoolAssetIncomeERC20,
+  LedgerPoolExpenditureERC20,
   Member,
   MemberIncomeAmountERC20,
   MemberPool,
@@ -173,6 +174,8 @@ export function getOrCreateLedgerPool(
     ledgerPool.count = ZERO_BI
     ledgerPool.assetIncomeAmount = ZERO_BI
     ledgerPool.assetIncomeERC20Amount = []
+    ledgerPool.expenditureAmount = ZERO_BI
+    ledgerPool.expenditureERC20Amount = []
     ledgerPool.assetIncomeTotal = ZERO_BI
     ledgerPool.save()
     log.info('Ledger Pool Created. ID {}', [id])
@@ -381,6 +384,21 @@ export function gerOrCreateLedgerPoolAssetIncomeERC20(
   return data as LedgerPoolAssetIncomeERC20
 }
 
+export function gerOrCreateLedgerPoolExpenditureERC20(
+  pool: Address,
+  erc20: Address
+): LedgerPoolExpenditureERC20 {
+  const id = pool.toHex().concat('-').concat(erc20.toHex())
+  let data = LedgerPoolExpenditureERC20.load(id)
+  if (data === null) {
+    data = new LedgerPoolExpenditureERC20(id)
+    data.erc20 = erc20.toHex()
+    data.ledgerPool = pool.toHex()
+    data.amount = ZERO_BI
+  }
+  return data as LedgerPoolExpenditureERC20
+}
+
 export function gerOrCreateMemberIncomeAmountERC20(
   member: string,
   erc20: Address
@@ -517,6 +535,38 @@ export function getOrCreateLedger(
             }
             member.save()
           }
+        }
+        break
+    }
+    switch (t) {
+      case release:
+      case withdraw:
+        if (ledger.amount !== null) {
+          if (params.erc20 !== null) {
+            const erc20ExpenditureItem = gerOrCreateLedgerPoolExpenditureERC20(
+              Address.fromString(ledgerPool.id),
+              params.erc20!
+            )
+            erc20ExpenditureItem.amount = erc20ExpenditureItem.amount.plus(
+              ledger.amount!
+            )
+            erc20ExpenditureItem.save()
+            if (
+              !ledgerPool.expenditureERC20Amount!.includes(
+                erc20ExpenditureItem.id
+              )
+            ) {
+              ledgerPool.expenditureERC20Amount =
+                ledgerPool.expenditureERC20Amount!.concat([
+                  erc20ExpenditureItem.id
+                ])
+            }
+          } else {
+            ledgerPool.expenditureAmount = ledgerPool.expenditureAmount.plus(
+              ledger.amount!
+            )
+          }
+          ledgerPool.save()
         }
         break
     }
