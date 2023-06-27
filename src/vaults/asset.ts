@@ -324,7 +324,7 @@ export function handleUnlock(event: UnlockEvent): void {
         event.block,
         {
           from,
-          to,
+          to: source,
           amount,
           member: null,
           name: null,
@@ -333,7 +333,7 @@ export function handleUnlock(event: UnlockEvent): void {
         }
       )
 
-      getOrCreateLedgerAssetIncome(
+      const ledgerAssetIncome = getOrCreateLedgerAssetIncome(
         ledgerPool,
         ledger,
         asset,
@@ -349,6 +349,11 @@ export function handleUnlock(event: UnlockEvent): void {
           erc20: Address.zero().equals(erc20) ? null : erc20
         }
       )
+
+      if (ledgerAssetIncome !== null) {
+        ledger.assetIncome = ledgerAssetIncome.id
+        ledger.save()
+      }
     }
   }
 }
@@ -411,7 +416,7 @@ export function handleReceive(event: ReceiveEvent): void {
           }
         )
 
-        getOrCreateLedgerAssetIncome(
+        const income = getOrCreateLedgerAssetIncome(
           ledgerPool,
           ledger,
           asset,
@@ -427,6 +432,11 @@ export function handleReceive(event: ReceiveEvent): void {
             erc20: null
           }
         )
+
+        if (income !== null) {
+          ledger.assetIncome = income.id
+          ledger.save()
+        }
       }
     }
   }

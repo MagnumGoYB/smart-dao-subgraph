@@ -324,7 +324,7 @@ export function getOrCreateVoteProposal(
 export function getOrCreateVote(
   pool: VotePool,
   proposal: Proposal,
-  memberTokenId: BigInt,
+  account: Address,
   votes: BigInt,
   block: ethereum.Block,
   tx: ethereum.Transaction
@@ -339,7 +339,7 @@ export function getOrCreateVote(
     vote.blockId = block.hash.toHex()
     vote.blockNumber = block.number
     vote.blockTimestamp = block.timestamp
-    vote.owner = pool.host.concat('-').concat(memberTokenId.toHex())
+    vote.owner = pool.host.concat('-').concat(account.toHex())
     vote.votes = votes
     vote.save()
 
@@ -482,7 +482,6 @@ export function getOrCreateLedger(
         ledger.ref = params.from
         ledger.amount = params.amount
         ledger.type = 'AssetIncome'
-        ledgerPool.save()
         break
     }
     switch (t) {
@@ -509,14 +508,12 @@ export function getOrCreateLedger(
         ledgerPool.count = ledgerPool.count.plus(ONE_BI)
         ledgerPool.save()
 
-        if (ledger.target && ledger.amount) {
-          const MemberId = ledger.host
-            .concat('-')
-            .concat(ledger.target!.toHex())
+        if (ledger.ref && ledger.amount) {
+          const MemberId = ledger.host.concat('-').concat(ledger.ref!.toHex())
           const member = Member.load(MemberId)
           if (member !== null) {
             member.incomeTotal = member.incomeTotal.plus(ONE_BI)
-            if (ledger.erc20) {
+            if (ledger.erc20 !== null) {
               const erc20IncomeItem = gerOrCreateMemberIncomeAmountERC20(
                 MemberId,
                 Address.fromString(ledger.erc20!)

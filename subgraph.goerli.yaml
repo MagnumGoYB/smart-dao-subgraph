@@ -98,6 +98,8 @@ templates:
           file: ./abis/DAO.json
         - name: VotePool
           file: ./abis/VotePool.json
+        - name: Member
+          file: ./abis/Member.json
       eventHandlers:
         - event: Created(uint256)
           handler: handleCreated

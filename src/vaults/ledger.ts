@@ -139,7 +139,7 @@ export function handleWithdraw(event: WithdrawEvent): void {
       name: null,
       description: event.params.description,
       member: null,
-      erc20
+      erc20: Address.zero().equals(erc20) ? null : erc20
     }
   )
 

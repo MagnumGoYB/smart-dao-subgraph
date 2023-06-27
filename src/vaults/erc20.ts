@@ -108,6 +108,11 @@ export function handleTransfer(event: TransferEvent): void {
                   }
                 )
 
+                if (income !== null) {
+                  ledger.assetIncome = income.id
+                  ledger.save()
+                }
+
                 log.info('ERC20 Transfer Asset Income. {}', [income!.id])
               }
             }

@@ -8,6 +8,8 @@ import {
 } from './../../generated/templates/VotePoolInitializable/VotePool'
 import {
   ONE_BI,
+  fetchMemberValue,
+  getOrCreateDAO,
   getOrCreateStatistic,
   getOrCreateVote,
   getOrCreateVotePool,
@@ -63,14 +65,21 @@ export function handleVote(event: VoteEvent): void {
     event.block
   )
 
-  getOrCreateVote(
-    pool,
-    proposal,
-    event.params.member,
-    event.params.votes,
-    event.block,
-    event.transaction
-  )
+  const dao = getOrCreateDAO(Address.fromString(DAOAddress))
+  if (dao.memberPool !== null) {
+    const memberValues = fetchMemberValue(
+      Address.fromString(dao.memberPool!),
+      event.params.member
+    )
+    getOrCreateVote(
+      pool,
+      proposal,
+      memberValues.owner,
+      event.params.votes,
+      event.block,
+      event.transaction
+    )
+  }
 
   pool.votedTotal = pool.votedTotal.plus(event.params.votes)
   pool.save()
